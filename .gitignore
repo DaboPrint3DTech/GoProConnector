@@ -1,0 +1,4 @@
+.build/
+build/
+tools/mock_assets/
+.DS_Store
