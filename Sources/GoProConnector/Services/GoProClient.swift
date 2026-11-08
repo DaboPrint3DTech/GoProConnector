@@ -41,9 +41,9 @@ enum GoProError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .badResponse(let code): return "La camera ha risposto con codice HTTP \(code)."
-        case .invalidData: return "Risposta della camera non valida."
-        case .notReachable(let msg): return "Camera non raggiungibile: \(msg)"
+        case .badResponse(let code): return String(localized: "The camera answered with HTTP status \(code).")
+        case .invalidData: return String(localized: "Invalid response from the camera.")
+        case .notReachable(let msg): return String(localized: "Camera not reachable: \(msg)")
         }
     }
 }

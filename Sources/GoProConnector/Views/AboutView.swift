@@ -5,7 +5,7 @@ enum AppLinks {
     static let repository = URL(string: "https://github.com/DaboPrint3DTech/GoProConnector")!
 }
 
-/// Informazioni sull'app: usata nella finestra "Informazioni su GoPro Connector" e nel pannello Impostazioni › Info.
+/// About the app: used in the "About GoPro Connector" window and in Settings › Info.
 struct AboutView: View {
     var iconSize: CGFloat = 128
     @Environment(\.openURL) private var openURL
@@ -14,7 +14,7 @@ struct AboutView: View {
         let info = Bundle.main.infoDictionary
         let short = info?["CFBundleShortVersionString"] as? String ?? "–"
         let build = info?["CFBundleVersion"] as? String ?? "–"
-        return "Versione \(short) (\(build))"
+        return String(localized: "Version \(short) (\(build))")
     }
 
     var body: some View {
@@ -29,14 +29,14 @@ struct AboutView: View {
                 Text(version).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             }
 
-            Text("Scarica foto e video dalla GoPro via WiFi, senza cavo USB.")
+            Text("Download photos and videos from your GoPro over WiFi, without a USB cable.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
 
             Divider().padding(.horizontal, 30)
 
             VStack(spacing: 2) {
-                Text("Sviluppata da").font(.caption).foregroundStyle(.secondary)
+                Text("Developed by").font(.caption).foregroundStyle(.secondary)
                 Text("DaboPrint3D · Design & Printing").font(.headline)
             }
 
@@ -44,13 +44,13 @@ struct AboutView: View {
                 Button {
                     openURL(AppLinks.githubProfile)
                 } label: {
-                    Label("DaboPrint3DTech su GitHub", systemImage: "person.crop.circle")
+                    Label("DaboPrint3DTech on GitHub", systemImage: "person.crop.circle")
                 }
                 .help(AppLinks.githubProfile.absoluteString)
                 Button {
                     openURL(AppLinks.repository)
                 } label: {
-                    Label("Codice sorgente", systemImage: "chevron.left.forwardslash.chevron.right")
+                    Label("Source Code", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
                 .help(AppLinks.repository.absoluteString)
             }
@@ -69,11 +69,11 @@ struct AboutView: View {
     }
 }
 
-/// Voce di menu che apre la finestra Informazioni.
+/// Menu item that opens the About window.
 struct AboutMenuButton: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("Informazioni su GoPro Connector") { openWindow(id: "about") }
+        Button("About GoPro Connector") { openWindow(id: "about") }
     }
 }

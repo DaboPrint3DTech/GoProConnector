@@ -23,7 +23,7 @@ struct ContentView: View {
             }
             .toolbar { toolbarContent }
         }
-        .searchable(text: $model.searchText, placement: .toolbar, prompt: "Cerca nome, data, tipo…")
+        .searchable(text: $model.searchText, placement: .toolbar, prompt: "Search name, date, type…")
         .sheet(item: $model.previewItem) { item in
             PreviewView(initial: item, items: model.filteredItems)
                 .environment(model)
@@ -31,16 +31,16 @@ struct ContentView: View {
         .confirmationDialog(deleteTitle, isPresented: Binding(
             get: { !pendingDelete.isEmpty }, set: { if !$0 { pendingDelete = [] } }
         ), titleVisibility: .visible) {
-            Button("Elimina dalla GoPro", role: .destructive) {
+            Button("Delete from GoPro", role: .destructive) {
                 let items = pendingDelete
                 pendingDelete = []
                 Task { await model.delete(items) }
             }
-            Button("Annulla", role: .cancel) { pendingDelete = [] }
+            Button("Cancel", role: .cancel) { pendingDelete = [] }
         } message: {
-            Text("I file verranno cancellati definitivamente dalla scheda SD della camera.")
+            Text("The files will be permanently deleted from the camera's SD card.")
         }
-        .alert("Errore", isPresented: Binding(
+        .alert("Error", isPresented: Binding(
             get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } }
         )) {
             Button("OK") { model.errorMessage = nil }
@@ -61,7 +61,8 @@ struct ContentView: View {
     }
 
     private var deleteTitle: String {
-        pendingDelete.count == 1 ? "Eliminare \(pendingDelete[0].fileName)?" : "Eliminare \(pendingDelete.count) elementi?"
+        pendingDelete.count == 1 ? String(localized: "Delete \(pendingDelete[0].fileName)?")
+                                  : String(localized: "Delete \(pendingDelete.count) items?")
     }
 
     func requestDelete(_ items: [MediaItem]) {
@@ -74,8 +75,8 @@ struct ContentView: View {
         let list = model.filteredItems
         VStack(spacing: 0) {
             if model.items.isEmpty && !model.isLoadingList {
-                ContentUnavailableView("Nessun file sulla camera", systemImage: "sdcard",
-                                       description: Text("La scheda SD è vuota."))
+                ContentUnavailableView("No files on the camera", systemImage: "sdcard",
+                                       description: Text("The SD card is empty."))
             } else if list.isEmpty && !model.isLoadingList {
                 ContentUnavailableView.search(text: model.searchText)
             } else {
@@ -91,7 +92,7 @@ struct ContentView: View {
         }
         .overlay {
             if model.isLoadingList && model.items.isEmpty {
-                ProgressView("Lettura dei file dalla camera…")
+                ProgressView("Reading files from the camera…")
                     .padding()
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
             }
@@ -106,20 +107,20 @@ struct ContentView: View {
             Button {
                 Task { await model.refresh() }
             } label: {
-                Label("Aggiorna", systemImage: "arrow.clockwise")
+                Label("Refresh", systemImage: "arrow.clockwise")
             }
             .disabled(model.state != .connected || model.isLoadingList)
-            .help("Rileggi la lista dei file dalla camera (⌘R)")
+            .help("Reload the file list from the camera (⌘R)")
         }
 
         ToolbarItemGroup(placement: .primaryAction) {
-            Picker("Vista", selection: $viewMode) {
+            Picker("View", selection: $viewMode) {
                 ForEach(ViewMode.allCases) { mode in
                     Label(mode.label, systemImage: mode.systemImage).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
-            .help("Cambia vista")
+            .help("Change view")
 
             if viewMode == .grid {
                 HStack(spacing: 4) {
@@ -128,57 +129,57 @@ struct ContentView: View {
                         .frame(width: 110)
                     Image(systemName: "photo").imageScale(.large)
                 }
-                .help("Dimensione icone (⌘+ / ⌘-)")
+                .help("Icon size (⌘+ / ⌘-)")
             }
 
             Menu {
-                Picker("Ordina per", selection: $model.sortOrder) {
+                Picker("Sort by", selection: $model.sortOrder) {
                     ForEach(SortOrder.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.inline)
                 if viewMode == .grid {
-                    Toggle("Raggruppa per giorno", isOn: Binding(
+                    Toggle("Group by day", isOn: Binding(
                         get: { UserDefaults.standard.bool(forKey: SettingsKeys.groupByDay) },
                         set: { UserDefaults.standard.set($0, forKey: SettingsKeys.groupByDay) }
                     ))
                 }
             } label: {
-                Label("Ordina", systemImage: "arrow.up.arrow.down")
+                Label("Sort", systemImage: "arrow.up.arrow.down")
             }
-            .help("Ordinamento")
+            .help("Sort order")
 
             let selected = model.selectedItems
             Menu {
-                Button("Scarica in…") {
+                Button("Download to…") {
                     if let url = model.chooseFolder() { model.copy(selected, to: url) }
                 }
-                Button("Sposta in…") {
+                Button("Move to…") {
                     if let url = model.chooseFolder() { model.move(selected, to: url) }
                 }
                 Divider()
-                Button("Sposta nella cartella predefinita") { model.move(selected) }
+                Button("Move to Default Folder") { model.move(selected) }
             } label: {
-                Label("Scarica", systemImage: "square.and.arrow.down")
+                Label("Download", systemImage: "square.and.arrow.down")
             } primaryAction: {
                 model.copy(selected)
             }
             .disabled(selected.isEmpty)
-            .help("Copia i selezionati sul Mac (⌘D). Il menu offre Sposta (scarica e cancella dalla camera).")
+            .help("Copy the selected files to the Mac (⌘D). The menu also offers Move (download, then delete from the camera).")
 
             Button(role: .destructive) {
                 requestDelete(selected)
             } label: {
-                Label("Elimina", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
             .disabled(selected.isEmpty)
-            .help("Elimina dalla camera (⌫)")
+            .help("Delete from the camera (⌫)")
 
             Button {
                 showTransfers.toggle()
             } label: {
                 TransferToolbarIcon()
             }
-            .help(model.transfers.isActive ? "Trasferimenti — \(model.transfers.summaryLine)" : "Trasferimenti")
+            .help(model.transfers.isActive ? String(localized: "Transfers — \(model.transfers.summaryLine)") : String(localized: "Transfers"))
             .popover(isPresented: $showTransfers, arrowEdge: .bottom) {
                 TransfersView()
                     .environment(model)
@@ -202,7 +203,7 @@ struct TransferToolbarIcon: View {
             }
             .frame(width: 18, height: 18)
         } else {
-            Label("Trasferimenti", systemImage: "arrow.down.circle")
+            Label("Transfers", systemImage: "arrow.down.circle")
         }
     }
 }
@@ -232,10 +233,10 @@ struct StatusBar: View {
 
     private var summary: String {
         let sel = model.selection.count
-        var s = "\(visibleCount) di \(model.items.count) elementi"
+        var s = String(localized: "\(visibleCount) of \(model.items.count) items")
         if sel > 0 {
             let bytes = model.selectedItems.reduce(Int64(0)) { $0 + $1.size }
-            s += " · \(sel) selezionati (\(Formatters.bytes.string(fromByteCount: bytes)))"
+            s += " · " + String(localized: "\(sel) selected (\(Formatters.bytes.string(fromByteCount: bytes)))")
         }
         return s
     }

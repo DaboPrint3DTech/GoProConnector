@@ -76,14 +76,14 @@ final class GoProBluetooth: NSObject {
         UserDefaults.standard.removeObject(forKey: Self.savedPeripheralKey)
         UserDefaults.standard.removeObject(forKey: Self.savedNameKey)
         statusText = ""
-        log("Camera dimenticata")
+        log("Camera forgotten")
     }
 
     func choose(_ name: String) {
         guard awaitingChoice else { return }
         chosenName = name
         awaitingChoice = false
-        log("Scelta dall'utente: \(name)")
+        log("User chose: \(name)")
         finish()
     }
 
@@ -104,7 +104,7 @@ final class GoProBluetooth: NSObject {
         } catch {
             let msg = error.localizedDescription
             phase = .failed(msg)
-            log("ERRORE: \(msg)")
+            log("ERROR: \(msg)")
             throw error
         }
     }
@@ -112,16 +112,16 @@ final class GoProBluetooth: NSObject {
     /// Spegne l'access point della camera (comando 0x17 = 0): il Mac torna da solo sulla rete di casa.
     func turnOffWiFi() async {
         guard let p = peripheral, p.state == .connected, let command = characteristics[Self.commandChar] else {
-            log("Spegnimento WiFi saltato: camera non connessa via Bluetooth")
+            log("Skipping WiFi off: camera not connected over Bluetooth")
             return
         }
         apResponseStatus = nil
         waitingForAPResponse = true
-        try? await wait(5, "spegnimento WiFi") {
+        try? await wait(5, String(localized: "turning off WiFi")) {
             p.writeValue(Data([0x03, 0x17, 0x01, 0x00]), for: command, type: .withResponse)
         }
         waitingForAPResponse = false
-        status("WiFi della camera spento")
+        status(String(localized: "Camera WiFi turned off"))
     }
 
     func disconnect() {
@@ -136,17 +136,17 @@ final class GoProBluetooth: NSObject {
         if central == nil {
             central = CBCentralManager(delegate: self, queue: nil)   // delegate sulla main queue
         }
-        guard let central else { throw BLEError.message("Bluetooth non disponibile.") }
+        guard let central else { throw BLEError.message(String(localized: "Bluetooth not available.")) }
 
-        status("Attivazione Bluetooth…")
+        status(String(localized: "Starting Bluetooth…"))
         if central.state != .poweredOn {
-            try await wait(10, "accensione Bluetooth") {}
+            try await wait(10, String(localized: "Bluetooth start-up")) {}
         }
         try checkState(central.state)
 
         // 1. Camera già connessa in questa sessione
         if let existing = peripheral, existing.state == .connected {
-            status("Camera già connessa via Bluetooth")
+            status(String(localized: "Camera already connected over Bluetooth"))
             return try await pairAndActivate(existing)
         }
 
@@ -154,12 +154,12 @@ final class GoProBluetooth: NSObject {
         if let idString = UserDefaults.standard.string(forKey: Self.savedPeripheralKey),
            let id = UUID(uuidString: idString),
            let known = central.retrievePeripherals(withIdentifiers: [id]).first {
-            log("Uso la camera già abbinata \(known.name ?? id.uuidString) [\(id.uuidString.prefix(8))]")
+            log("Using the paired camera \(known.name ?? id.uuidString) [\(id.uuidString.prefix(8))]")
             do {
                 try await connect(known, central)
                 return try await pairAndActivate(known)
             } catch {
-                log("Camera ricordata non utilizzabile (\(error.localizedDescription)), nuova ricerca")
+                log("Remembered camera not usable (\(error.localizedDescription)), scanning again")
                 central.cancelPeripheralConnection(known)
                 UserDefaults.standard.removeObject(forKey: Self.savedPeripheralKey)
             }
@@ -174,69 +174,69 @@ final class GoProBluetooth: NSObject {
                 return try await pairAndActivate(p)
             } catch {
                 lastError = error
-                log("Identità \(i + 1)/\(identities.count) [\(p.identifier.uuidString.prefix(8))] fallita: \(error.localizedDescription)")
+                log("Identity \(i + 1)/\(identities.count) [\(p.identifier.uuidString.prefix(8))] failed: \(error.localizedDescription)")
                 central.cancelPeripheralConnection(p)
                 if i < identities.count - 1 {
-                    status("Provo l'altra identità Bluetooth della camera (\(i + 2)/\(identities.count))…")
+                    status(String(localized: "Trying the camera's other Bluetooth identity (\(i + 2)/\(identities.count))…"))
                     try? await Task.sleep(for: .seconds(1.5))
                 }
             }
         }
-        throw lastError ?? BLEError.message("Nessuna GoPro utilizzabile.")
+        throw lastError ?? BLEError.message(String(localized: "No usable GoPro found."))
     }
 
     private func pairAndActivate(_ p: CBPeripheral) async throws -> Credentials {
         // 2. Servizi e caratteristiche
         if characteristics[Self.commandChar] == nil || characteristics[Self.ssidChar] == nil {
-            status("Lettura servizi della camera…")
+            status(String(localized: "Reading the camera's services…"))
             characteristics = [:]
-            try await wait(15, "lettura servizi") { p.discoverServices([Self.controlService, Self.wifiService]) }
+            try await wait(15, String(localized: "reading services")) { p.discoverServices([Self.controlService, Self.wifiService]) }
         }
         guard let command = characteristics[Self.commandChar],
               let response = characteristics[Self.commandResponseChar],
               let ssidC = characteristics[Self.ssidChar],
               let passC = characteristics[Self.passwordChar] else {
-            throw BLEError.message("La camera non espone i servizi GoPro attesi (trovati: \(characteristics.keys.map(\.uuidString).sorted().joined(separator: ", "))).")
+            throw BLEError.message(String(localized: "The camera doesn't expose the expected GoPro services (found: \(characteristics.keys.map(\.uuidString).sorted().joined(separator: ", ")))."))
         }
 
         // 3. Notifiche delle risposte (qui macOS può chiedere l'abbinamento)
-        status("Abbinamento / autorizzazione… (se compare una richiesta di macOS, premi Connetti)")
-        try await wait(40, "abbinamento Bluetooth") { p.setNotifyValue(true, for: response) }
+        status(String(localized: "Pairing / authorization… (if macOS shows a request, click Connect)"))
+        try await wait(40, String(localized: "Bluetooth pairing")) { p.setNotifyValue(true, for: response) }
 
         // 4. Credenziali WiFi
-        status("Lettura nome rete e password…")
+        status(String(localized: "Reading network name and password…"))
         let ssid = try await readString(ssidC, from: p)
         let password = try await readString(passC, from: p)
-        log("SSID letto: \(ssid)")
+        log("SSID read: \(ssid)")
         // abbinamento riuscito: da ora questa è la camera da usare
         UserDefaults.standard.set(p.identifier.uuidString, forKey: Self.savedPeripheralKey)
         UserDefaults.standard.set(p.name ?? ssid, forKey: Self.savedNameKey)
 
         // 5. Accensione dell'access point WiFi: comando 0x17 (AP control) = 1
-        status("Accensione WiFi della camera…")
+        status(String(localized: "Turning on the camera's WiFi…"))
         apResponseStatus = nil
         waitingForAPResponse = true
         do {
-            try await wait(8, "risposta al comando WiFi") {
+            try await wait(8, String(localized: "WiFi command response")) {
                 p.writeValue(Data([0x03, 0x17, 0x01, 0x01]), for: command, type: .withResponse)
             }
         } catch {
-            log("Nessuna risposta al comando 0x17 (\(error.localizedDescription)), provo con GP-0004")
+            log("No response to command 0x17 (\(error.localizedDescription)), trying GP-0004")
         }
         waitingForAPResponse = false
-        if let s = apResponseStatus, s != 0 { log("La camera ha risposto al comando WiFi con stato \(s)") }
+        if let s = apResponseStatus, s != 0 { log("Camera answered the WiFi command with status \(s)") }
         if apResponseStatus != 0, let power = characteristics[Self.apPowerChar] {
-            try? await wait(8, "accensione WiFi (GP-0004)") {
+            try? await wait(8, String(localized: "turning on WiFi (GP-0004)")) {
                 p.writeValue(Data([0x01]), for: power, type: .withResponse)
             }
         }
 
-        status("WiFi della camera acceso (\(ssid))")
+        status(String(localized: "Camera WiFi on (\(ssid))"))
         return Credentials(ssid: ssid, password: password)
     }
 
     private func scanForCamera(_ central: CBCentralManager) async throws -> [CBPeripheral] {
-        status("Ricerca delle GoPro via Bluetooth… (tieni la camera accesa vicino al Mac)")
+        status(String(localized: "Searching for GoPro cameras over Bluetooth… (keep the camera on and near the Mac)"))
         candidates = []
         chosenName = nil
         scanning = true
@@ -248,25 +248,25 @@ final class GoProBluetooth: NSObject {
         }
         central.stopScan()
         scanning = false
-        log("GoPro trovate: " + candidates.map {
+        log("GoPro cameras found: " + candidates.map {
             "\($0.name) (adv \"\($0.advertisedName)\") [\($0.id.uuidString.prefix(8))] \($0.rssi) dBm"
         }.joined(separator: ", "))
         if candidates.isEmpty {
-            throw BLEError.message("Nessuna GoPro trovata via Bluetooth. La camera è accesa e nella schermata di abbinamento?")
+            throw BLEError.message(String(localized: "No GoPro found over Bluetooth. Is the camera on and showing the pairing screen?"))
         }
 
         let names = choices
         var name = names[0].name
         if names.count > 1 {
             awaitingChoice = true
-            status("Ho trovato \(names.count) GoPro diverse: scegli la tua (il nome è in Preferenze › Connessioni › Info camera).")
+            status(String(localized: "Found \(names.count) different GoPro cameras: choose yours (the name is in Preferences › Connections › Camera Info)."))
             defer { awaitingChoice = false }
-            try await wait(180, "scelta della camera") {}
-            guard let chosenName else { throw BLEError.message("Nessuna camera scelta.") }
+            try await wait(180, String(localized: "camera choice")) {}
+            guard let chosenName else { throw BLEError.message(String(localized: "No camera chosen.")) }
             name = chosenName
         }
         let list = candidates.filter { $0.name == name }.sorted { $0.rssi > $1.rssi }
-        if list.count > 1 { log("\(name) ha \(list.count) identità Bluetooth: le provo tutte") }
+        if list.count > 1 { log("\(name) has \(list.count) Bluetooth identities: trying them all") }
         return list.map(\.peripheral)
     }
 
@@ -274,19 +274,19 @@ final class GoProBluetooth: NSObject {
         peripheral = p
         p.delegate = self
         characteristics = [:]
-        status("Connessione Bluetooth a \(p.name ?? "GoPro")…")
-        log("Identità [\(p.identifier.uuidString.prefix(8))]")
-        try await wait(15, "connessione Bluetooth") { central.connect(p) }
+        status(String(localized: "Connecting over Bluetooth to \(p.name ?? "GoPro")…"))
+        log("Identity [\(p.identifier.uuidString.prefix(8))]")
+        try await wait(15, String(localized: "Bluetooth connection")) { central.connect(p) }
     }
 
     private func readString(_ c: CBCharacteristic, from p: CBPeripheral) async throws -> String {
         readingUUID = c.uuid
         lastRead = nil
-        try await wait(10, "lettura \(c.uuid == Self.ssidChar ? "nome rete" : "password")") { p.readValue(for: c) }
+        try await wait(10, c.uuid == Self.ssidChar ? String(localized: "reading network name") : String(localized: "reading password")) { p.readValue(for: c) }
         readingUUID = nil
         guard let data = lastRead, let s = String(data: data, encoding: .utf8)?
             .trimmingCharacters(in: .controlCharacters.union(.whitespaces)), !s.isEmpty else {
-            throw BLEError.message("Valore vuoto letto dalla camera.")
+            throw BLEError.message(String(localized: "Empty value read from the camera."))
         }
         return s
     }
@@ -300,7 +300,7 @@ final class GoProBluetooth: NSObject {
             timeoutTask = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(seconds))
                 if Task.isCancelled { return }
-                self?.finish(BLEError.message("Tempo scaduto: \(what)."))
+                self?.finish(BLEError.message(String(localized: "Timed out: \(what).")))
             }
             start()
         }
@@ -318,10 +318,10 @@ final class GoProBluetooth: NSObject {
         switch state {
         case .poweredOn: return
         case .unauthorized:
-            throw BLEError.message("Permesso Bluetooth negato. Abilitalo in Impostazioni di Sistema › Privacy e sicurezza › Bluetooth.")
-        case .poweredOff: throw BLEError.message("Il Bluetooth del Mac è spento.")
-        case .unsupported: throw BLEError.message("Questo Mac non supporta Bluetooth Low Energy.")
-        default: throw BLEError.message("Bluetooth non pronto (stato \(state.rawValue)).")
+            throw BLEError.message(String(localized: "Bluetooth permission denied. Turn it on in System Settings › Privacy & Security › Bluetooth."))
+        case .poweredOff: throw BLEError.message(String(localized: "The Mac's Bluetooth is off."))
+        case .unsupported: throw BLEError.message(String(localized: "This Mac doesn't support Bluetooth Low Energy."))
+        default: throw BLEError.message(String(localized: "Bluetooth not ready (state \(state.rawValue))."))
         }
     }
 
@@ -349,7 +349,7 @@ extension GoProBluetooth: CBCentralManagerDelegate, CBPeripheralDelegate {
     nonisolated func centralManagerDidUpdateState(_ central: CBCentralManager) {
         let state = central.state
         MainActor.assumeIsolated {
-            log("Stato Bluetooth: \(state.rawValue)")
+            log("Bluetooth state: \(state.rawValue)")
             if state == .poweredOn { finish() }
             else if state != .unknown && state != .resetting {
                 do { try checkState(state) } catch { finish(error) }
@@ -373,14 +373,14 @@ extension GoProBluetooth: CBCentralManagerDelegate, CBPeripheralDelegate {
             } else {
                 candidates.append(Candidate(id: peripheral.identifier, name: display, advertisedName: name,
                                             rssi: rssi, peripheral: peripheral))
-                log("Trovata \(display) (pubblicizzata come \"\(name)\") \(rssi) dBm")
+                log("Found \(display) (advertised as \"\(name)\") \(rssi) dBm")
             }
         }
     }
 
     nonisolated func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         MainActor.assumeIsolated {
-            log("Connesso via Bluetooth")
+            log("Connected over Bluetooth")
             finish()
         }
     }
@@ -388,15 +388,16 @@ extension GoProBluetooth: CBCentralManagerDelegate, CBPeripheralDelegate {
     nonisolated func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         MainActor.assumeIsolated {
             UserDefaults.standard.removeObject(forKey: Self.savedPeripheralKey)
-            finish(BLEError.message("Connessione Bluetooth fallita: \(error?.localizedDescription ?? "errore sconosciuto")"))
+            finish(BLEError.message(String(localized: "Bluetooth connection failed: \(error?.localizedDescription ?? String(localized: "unknown error"))")))
         }
     }
 
     nonisolated func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         MainActor.assumeIsolated {
-            log("Bluetooth disconnesso \(error.map { "(\($0.localizedDescription))" } ?? "")")
+            log("Bluetooth disconnected \(error.map { "(\($0.localizedDescription))" } ?? "")")
             characteristics = [:]
-            finish(BLEError.message("La camera ha chiuso la connessione Bluetooth\(error.map { ": \($0.localizedDescription)" } ?? ".")"))
+            finish(BLEError.message(error.map { String(localized: "The camera closed the Bluetooth connection: \($0.localizedDescription)") }
+                                     ?? String(localized: "The camera closed the Bluetooth connection.")))
         }
     }
 
@@ -404,7 +405,7 @@ extension GoProBluetooth: CBCentralManagerDelegate, CBPeripheralDelegate {
         MainActor.assumeIsolated {
             if let error { finish(error); return }
             let services = peripheral.services ?? []
-            log("Servizi: \(services.map(\.uuid.uuidString).joined(separator: ", "))")
+            log("Services: \(services.map(\.uuid.uuidString).joined(separator: ", "))")
             pendingServiceCount = services.count
             if services.isEmpty { finish(); return }
             for s in services { peripheral.discoverCharacteristics(nil, for: s) }
@@ -423,7 +424,7 @@ extension GoProBluetooth: CBCentralManagerDelegate, CBPeripheralDelegate {
         MainActor.assumeIsolated {
             if let error {
                 UserDefaults.standard.removeObject(forKey: Self.savedPeripheralKey)
-                finish(BLEError.message("Abbinamento non riuscito: \(error.localizedDescription). Metti la camera in modalità abbinamento (Preferenze › Connessioni › Connetti dispositivo › App GoPro) e riprova."))
+                finish(BLEError.message(String(localized: "Pairing failed: \(error.localizedDescription). Put the camera in pairing mode (Preferences › Connections › Connect Device › GoPro App) and try again.")))
             } else {
                 finish()
             }
@@ -436,7 +437,7 @@ extension GoProBluetooth: CBCentralManagerDelegate, CBPeripheralDelegate {
         MainActor.assumeIsolated {
             if uuid == Self.commandResponseChar {
                 let bytes = [UInt8](value ?? Data())
-                log("Risposta comando: \(bytes.map { String(format: "%02x", $0) }.joined(separator: " "))")
+                log("Command response: \(bytes.map { String(format: "%02x", $0) }.joined(separator: " "))")
                 if waitingForAPResponse, bytes.count >= 3, bytes[1] == 0x17 {
                     apResponseStatus = bytes[2]
                     finish()
@@ -445,7 +446,7 @@ extension GoProBluetooth: CBCentralManagerDelegate, CBPeripheralDelegate {
             }
             if uuid == readingUUID {
                 if let error {
-                    finish(BLEError.message("Lettura non autorizzata: \(error.localizedDescription). Serve l'abbinamento con la camera."))
+                    finish(BLEError.message(String(localized: "Read not authorized: \(error.localizedDescription). The camera must be paired.")))
                 } else {
                     lastRead = value
                     finish()
@@ -458,7 +459,7 @@ extension GoProBluetooth: CBCentralManagerDelegate, CBPeripheralDelegate {
         let uuid = characteristic.uuid
         MainActor.assumeIsolated {
             if let error {
-                log("Scrittura su \(uuid.uuidString) fallita: \(error.localizedDescription)")
+                log("Write to \(uuid.uuidString) failed: \(error.localizedDescription)")
                 if uuid == Self.apPowerChar { finish(error) }
                 return
             }

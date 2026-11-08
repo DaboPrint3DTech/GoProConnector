@@ -121,23 +121,26 @@ final class TransferManager {
     /// Es. "mancano circa 3 min 20 s · fine verso le 15:42".
     var etaLine: String {
         guard let eta = etaSeconds else {
-            return hasMeasurement ? "In attesa di dati dalla camera…" : "Calcolo del tempo rimanente…"
+            return hasMeasurement ? String(localized: "Waiting for data from the camera…")
+                                  : String(localized: "Calculating time left…")
         }
+        let left = Formatters.eta(eta)
         let finish = Formatters.clock.string(from: Date().addingTimeInterval(eta))
-        return "\(etaIsRough ? "circa " : "")\(Formatters.eta(eta)) rimanenti · fine verso le \(finish)"
+        return etaIsRough ? String(localized: "About \(left) left · done around \(finish)")
+                          : String(localized: "\(left) left · done around \(finish)")
     }
 
     /// Riga compatta per la barra di stato.
     var summaryLine: String {
         var parts: [String] = []
         if bytesPerSecond > 0 { parts.append("\(Formatters.bytes.string(fromByteCount: Int64(bytesPerSecond)))/s") }
-        parts.append("restano \(Formatters.bytes.string(fromByteCount: remainingBytes))")
+        parts.append(String(localized: "\(Formatters.bytes.string(fromByteCount: remainingBytes)) left"))
         if let eta = etaSeconds {
             parts.append("\(etaIsRough ? "≈ " : "")\(Formatters.eta(eta))")
         } else {
-            parts.append("stima in corso…")
+            parts.append(String(localized: "estimating…"))
         }
-        return "Download: " + parts.joined(separator: " · ")
+        return String(localized: "Download: \(parts.joined(separator: " · "))")
     }
 
     /// Tempo stimato per finire un singolo elemento in corso.
@@ -297,7 +300,7 @@ final class TransferManager {
 
     private func process(jobID: UUID) async throws {
         guard let job = jobs.first(where: { $0.id == jobID }) else { return }
-        guard let client = clientProvider() else { throw GoProError.notReachable("nessuna camera connessa") }
+        guard let client = clientProvider() else { throw GoProError.notReachable(String(localized: "no camera connected")) }
         let item = job.item
         let fm = FileManager.default
 
@@ -307,7 +310,7 @@ final class TransferManager {
         }
         if item.isGroup {
             let base = (item.fileName as NSString).deletingPathExtension
-            folder.appendPathComponent("\(item.kind.label.replacingOccurrences(of: " ", with: ""))_\(base)", isDirectory: true)
+            folder.appendPathComponent("\(item.kind.folderPrefix)_\(base)", isDirectory: true)
         }
         try fm.createDirectory(at: folder, withIntermediateDirectories: true)
 
@@ -353,7 +356,7 @@ final class TransferManager {
             if isMainSingleFile && item.size > 0 && size != item.size {
                 try? fm.removeItem(at: partial)
                 throw NSError(domain: "GoProConnector", code: 1, userInfo: [
-                    NSLocalizedDescriptionKey: "Dimensione non corrispondente per \(name) (\(size) invece di \(item.size) byte)"
+                    NSLocalizedDescriptionKey: String(localized: "Size mismatch for \(name) (\(size) instead of \(item.size) bytes)")
                 ])
             }
             try fm.moveItem(at: partial, to: target)

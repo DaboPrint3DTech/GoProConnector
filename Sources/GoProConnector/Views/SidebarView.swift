@@ -11,8 +11,8 @@ struct SidebarView: View {
             }
 
             if model.state == .connected {
-                Section("Tipo") {
-                    kindRow(nil, label: "Tutti i media", icon: "square.grid.2x2")
+                Section("Type") {
+                    kindRow(nil, label: String(localized: "All media"), icon: "square.grid.2x2")
                     ForEach(MediaKind.allCases) { kind in
                         if model.count(of: kind) > 0 {
                             kindRow(kind, label: kind.label, icon: kind.systemImage)
@@ -20,8 +20,8 @@ struct SidebarView: View {
                     }
                 }
 
-                Section("Stato") {
-                    Picker("Stato", selection: $model.downloadFilter) {
+                Section("Status") {
+                    Picker("Status", selection: $model.downloadFilter) {
                         ForEach(DownloadFilter.allCases) { Text($0.label).tag($0) }
                     }
                     .pickerStyle(.radioGroup)
@@ -29,7 +29,7 @@ struct SidebarView: View {
                 }
 
                 if !model.availableDays.isEmpty {
-                    Section("Giorni") {
+                    Section("Days") {
                         dayRow(nil)
                         ForEach(model.availableDays, id: \.self) { dayRow($0) }
                     }
@@ -60,7 +60,7 @@ struct SidebarView: View {
             model.dayFilter = day
         } label: {
             HStack {
-                Text(day.map { Formatters.cameraDay.string(from: $0) } ?? "Tutti i giorni")
+                Text(day.map { Formatters.cameraDay.string(from: $0) } ?? String(localized: "All days"))
                     .lineLimit(1)
                 Spacer()
                 if let day {
@@ -89,32 +89,32 @@ struct CameraCard: View {
             case .connected:
                 if let s = model.status {
                     if let b = s.batteryPercent {
-                        Label("Batteria \(b)%", systemImage: batteryIcon(b))
+                        Label("Battery \(b)%", systemImage: batteryIcon(b))
                     }
                     if let free = s.freeSpaceBytes {
-                        Label("\(Formatters.bytes.string(fromByteCount: free)) liberi", systemImage: "sdcard")
+                        Label("\(Formatters.bytes.string(fromByteCount: free)) free", systemImage: "sdcard")
                     }
                     if !s.sdCardOK {
-                        Label("Problema scheda SD", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                        Label("SD card problem", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                     }
                 }
-                Label("\(model.items.count) elementi · \(Formatters.bytes.string(fromByteCount: model.totalSize))",
+                Label("\(model.items.count) items · \(Formatters.bytes.string(fromByteCount: model.totalSize))",
                       systemImage: "film.stack")
                 if let other = LibraryViewModel.otherConnectionName() {
                     Label("Internet via \(other)", systemImage: "network")
                         .foregroundStyle(.secondary)
                 } else {
-                    Label("Senza Internet finché sei sulla GoPro", systemImage: "wifi.exclamationmark")
+                    Label("No Internet while on the GoPro", systemImage: "wifi.exclamationmark")
                         .foregroundStyle(.secondary)
-                        .help("Collega un cavo Ethernet al Mac per restare online mentre scarichi.")
+                        .help("Connect an Ethernet cable to the Mac to stay online while downloading.")
                 }
-                Button("Disconnetti e spegni WiFi GoPro") { Task { await model.disconnectAndRestoreNetwork() } }
+                Button("Disconnect and Turn Off GoPro WiFi") { Task { await model.disconnectAndRestoreNetwork() } }
                     .controlSize(.small)
             case .connecting:
-                HStack { ProgressView().controlSize(.small); Text("Connessione…") }
+                HStack { ProgressView().controlSize(.small); Text("Connecting…") }
             case .disconnected, .failed:
-                Text("Non connessa").foregroundStyle(.secondary)
-                Button("Connetti") { Task { await model.smartConnect() } }
+                Text("Not connected").foregroundStyle(.secondary)
+                Button("Connect") { Task { await model.smartConnect() } }
                     .controlSize(.small)
             }
         }
@@ -157,8 +157,8 @@ struct ConnectionView: View {
                         .font(.system(size: 40))
                         .foregroundStyle(Color.accentColor)
                     VStack(alignment: .leading) {
-                        Text("Collega la tua GoPro via WiFi").font(.title2.bold())
-                        Text("Pensato per HERO8 Black (funziona anche con HERO5–HERO7).")
+                        Text("Connect your GoPro over WiFi").font(.title2.bold())
+                        Text("Made for the HERO8 Black (also works with HERO5–HERO7).")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -171,17 +171,17 @@ struct ConnectionView: View {
                         .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                 }
 
-                GroupBox("Collegamento automatico via Bluetooth (consigliato)") {
+                GroupBox("Automatic connection via Bluetooth (recommended)") {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Come fa Quik: l'app accende il WiFi della camera via Bluetooth, legge nome rete e password e collega il Mac da sola.")
-                        Text("**La prima volta:** sulla GoPro vai in Preferenze › Connessioni › Connetti dispositivo › App GoPro, e chiudi Quik sul telefono (o spegni il suo Bluetooth). macOS chiederà di autorizzare il Bluetooth e di confermare l'abbinamento.")
+                        Text("Like Quik: the app turns on the camera's WiFi over Bluetooth, reads the network name and password, and connects the Mac by itself.")
+                        Text("**First time:** on the GoPro go to Preferences › Connections › Connect Device › GoPro App, and close Quik on your phone (or turn off its Bluetooth). macOS will ask you to allow Bluetooth and to confirm the pairing.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                         HStack(spacing: 10) {
                             Button {
                                 Task { await model.connectViaBluetooth() }
                             } label: {
-                                Label("Accendi WiFi via Bluetooth e connetti", systemImage: "antenna.radiowaves.left.and.right")
+                                Label("Turn On WiFi via Bluetooth and Connect", systemImage: "antenna.radiowaves.left.and.right")
                             }
                             .controlSize(.large)
                             .keyboardShortcut(.defaultAction)
@@ -202,7 +202,7 @@ struct ConnectionView: View {
                                         HStack {
                                             Image(systemName: "camera")
                                             Text(c.name).bold()
-                                            Text("segnale \(c.rssi) dBm").foregroundStyle(.secondary)
+                                            Text("signal \(c.rssi) dBm").foregroundStyle(.secondary)
                                         }
                                     }
                                 }
@@ -212,8 +212,8 @@ struct ConnectionView: View {
                         }
                         if let name = model.bluetooth.rememberedCameraName, !model.isLinking {
                             HStack(spacing: 6) {
-                                Text("Camera abbinata: \(name)").font(.callout).foregroundStyle(.secondary)
-                                Button("Dimentica") { model.bluetooth.forgetCamera() }
+                                Text("Paired camera: \(name)").font(.callout).foregroundStyle(.secondary)
+                                Button("Forget") { model.bluetooth.forgetCamera() }
                                     .buttonStyle(.link)
                                     .font(.callout)
                             }
@@ -223,16 +223,16 @@ struct ConnectionView: View {
                     .padding(6)
                 }
 
-                Text("In alternativa, a mano").font(.headline).padding(.top, 6)
+                Text("Or manually").font(.headline).padding(.top, 6)
 
-                GroupBox("Collega il Mac alla rete della GoPro") {
+                GroupBox("Join the Mac to the GoPro's network") {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Selezionala dal menu WiFi di macOS, oppure inseriscila qui e l'app si collegherà per te. Mentre sei collegato alla GoPro il Mac non avrà accesso a Internet via WiFi.")
+                        Text("Select it from the macOS WiFi menu, or enter it here and the app will join it for you. While connected to the GoPro, the Mac has no Internet access over WiFi.")
                             .foregroundStyle(.secondary)
                         HStack {
-                            TextField("Nome rete (es. GP2xxxxxxx)", text: $ssid)
+                            TextField("Network name (e.g. GP2xxxxxxx)", text: $ssid)
                             SecureField("Password", text: $password)
-                            Button(joining ? "Collegamento…" : "Collega WiFi") { join() }
+                            Button(joining ? LocalizedStringKey("Joining…") : LocalizedStringKey("Join WiFi")) { join() }
                                 .disabled(ssid.isEmpty || password.isEmpty || joining)
                         }
                         if let joinMessage { Text(joinMessage).font(.callout).foregroundStyle(.secondary) }
@@ -241,13 +241,13 @@ struct ConnectionView: View {
                     .padding(6)
                 }
 
-                GroupBox("Connetti (se il Mac è già sulla rete della GoPro)") {
+                GroupBox("Connect (if the Mac is already on the GoPro's network)") {
                     HStack {
-                        Text("Indirizzo camera: \(GoProEndpoint.fromDefaults().host)")
+                        Text("Camera address: \(GoProEndpoint.fromDefaults().host)")
                             .foregroundStyle(.secondary)
                         Spacer()
                         if model.state == .connecting { ProgressView().controlSize(.small) }
-                        Button("Connetti alla GoPro") { Task { await model.connect() } }
+                        Button("Connect to GoPro") { Task { await model.connect() } }
                             .disabled(model.state == .connecting)
                     }
                     .padding(6)
@@ -268,11 +268,11 @@ struct ConnectionView: View {
         Task {
             do {
                 try await WiFiJoiner.join(ssid: ssid, password: password)
-                joinMessage = "Collegato a \(ssid). Connessione alla camera…"
+                joinMessage = String(localized: "Joined \(ssid). Connecting to the camera…")
                 try? await Task.sleep(for: .seconds(2))
                 await model.connect()
             } catch {
-                joinMessage = "Impossibile collegarsi: \(error.localizedDescription)"
+                joinMessage = String(localized: "Can't join: \(error.localizedDescription)")
             }
             joining = false
         }

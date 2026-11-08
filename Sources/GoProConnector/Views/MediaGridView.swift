@@ -68,9 +68,9 @@ struct SectionHeader: View {
     var body: some View {
         HStack {
             Text(Formatters.cameraDay.string(from: section.day)).font(.headline)
-            Text("\(section.items.count) elementi").foregroundStyle(.secondary)
+            Text("\(section.items.count) items").foregroundStyle(.secondary)
             Spacer()
-            Button("Seleziona giorno") {
+            Button("Select Day") {
                 model.selection.formUnion(section.items.map(\.id))
             }
             .buttonStyle(.link)
@@ -99,7 +99,7 @@ struct MediaTile: View {
                 HStack(spacing: 4) {
                     Image(systemName: item.kind.systemImage)
                     if item.isGroup { Text("\(item.fileCount)") }
-                    if let ch = item.chapter, ch > 1 { Text("cap. \(ch)") }
+                    if let ch = item.chapter, ch > 1 { Text("ch. \(ch)") }
                 }
                 .font(.caption2.bold())
                 .padding(.horizontal, 5).padding(.vertical, 2)
@@ -114,7 +114,7 @@ struct MediaTile: View {
                         .foregroundStyle(.white, .green)
                         .font(.system(size: 16))
                         .padding(5)
-                        .help("Già scaricato")
+                        .help("Already downloaded")
                 }
             }
 
@@ -180,21 +180,21 @@ struct MediaContextMenu: View {
     var body: some View {
         let t = targets
         let suffix = t.count > 1 ? " (\(t.count))" : ""
-        Button("Anteprima") { model.previewItem = item }
+        Button("Preview") { model.previewItem = item }
         Divider()
-        Button("Scarica sul Mac\(suffix)") { model.copy(t) }
-        Button("Scarica in…\(suffix)") { if let url = model.chooseFolder() { model.copy(t, to: url) } }
-        Button("Sposta sul Mac\(suffix)") { model.move(t) }
-        Button("Sposta in…\(suffix)") { if let url = model.chooseFolder() { model.move(t, to: url) } }
+        Button("Download to Mac\(suffix)") { model.copy(t) }
+        Button("Download to…\(suffix)") { if let url = model.chooseFolder() { model.copy(t, to: url) } }
+        Button("Move to Mac\(suffix)") { model.move(t) }
+        Button("Move to…\(suffix)") { if let url = model.chooseFolder() { model.move(t, to: url) } }
         Divider()
         if model.history.contains(item) {
-            Button("Mostra nel Finder") { model.revealInFinder(item) }
+            Button("Show in Finder") { model.revealInFinder(item) }
         }
-        Button("Copia nome file") {
+        Button("Copy File Name") {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(t.map(\.fileName).joined(separator: "\n"), forType: .string)
         }
         Divider()
-        Button("Elimina dalla GoPro\(suffix)", role: .destructive) { onDelete(t) }
+        Button("Delete from GoPro\(suffix)", role: .destructive) { onDelete(t) }
     }
 }

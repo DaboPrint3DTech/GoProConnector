@@ -1,0 +1,3 @@
+/* Italian texts for the macOS permission prompts. */
+"NSBluetoothAlwaysUsageDescription" = "GoPro Connector usa il Bluetooth per accendere il WiFi della GoPro, come l'app Quik.";
+"NSLocalNetworkUsageDescription" = "GoPro Connector si collega alla tua GoPro tramite la sua rete WiFi per mostrare e scaricare i file.";

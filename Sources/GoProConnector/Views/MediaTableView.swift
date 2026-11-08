@@ -15,33 +15,33 @@ struct MediaTableView: View {
             }
             .width(70)
 
-            TableColumn("Nome") { item in
+            TableColumn("Name") { item in
                 HStack(spacing: 6) {
                     Text(item.fileName)
                     if model.history.contains(item) {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).help("Già scaricato")
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).help("Already downloaded")
                     }
                 }
             }
             .width(min: 140, ideal: 180)
 
-            TableColumn("Tipo") { item in
+            TableColumn("Type") { item in
                 Label(item.isGroup ? "\(item.kind.label) (\(item.fileCount))" : item.kind.label,
                       systemImage: item.kind.systemImage)
             }
             .width(min: 90, ideal: 120)
 
-            TableColumn("Data") { item in
+            TableColumn("Date") { item in
                 Text(Formatters.cameraDate.string(from: item.created)).monospacedDigit()
             }
             .width(min: 120, ideal: 150)
 
-            TableColumn("Dimensione") { item in
+            TableColumn("Size") { item in
                 Text(Formatters.bytes.string(fromByteCount: item.size)).monospacedDigit()
             }
             .width(min: 70, ideal: 90)
 
-            TableColumn("Cartella") { item in
+            TableColumn("Folder") { item in
                 Text(item.directory).foregroundStyle(.secondary)
             }
             .width(min: 70, ideal: 90)

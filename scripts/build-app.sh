@@ -19,6 +19,7 @@ mkdir -p "$BUNDLE/Contents/MacOS" "$BUNDLE/Contents/Resources"
 cp "$BIN" "$BUNDLE/Contents/MacOS/GoProConnector"
 cp Resources/Info.plist "$BUNDLE/Contents/Info.plist"
 cp Resources/AppIcon.icns "$BUNDLE/Contents/Resources/"
+cp -R Resources/*.lproj "$BUNDLE/Contents/Resources/"   # translations (English base + Italian)
 
 # Firma ad-hoc: necessaria per i permessi di rete locale su macOS 15
 codesign --force --deep --sign - "$BUNDLE"

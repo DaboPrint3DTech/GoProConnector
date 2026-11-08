@@ -17,7 +17,7 @@ enum WiFiJoiner {
 
     static func join(ssid: String, password: String) async throws {
         try await Task.detached {
-            guard let iface = wifiInterface() else { throw message("Interfaccia WiFi non trovata.") }
+            guard let iface = wifiInterface() else { throw message(String(localized: "WiFi interface not found.")) }
             let out = try run("/usr/sbin/networksetup", ["-setairportnetwork", iface, ssid, password])
             let trimmed = out.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {   // networksetup stampa qualcosa solo in caso di errore

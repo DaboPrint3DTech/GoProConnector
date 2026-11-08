@@ -8,7 +8,7 @@ struct TransfersView: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text("Trasferimenti").font(.headline)
+                    Text("Transfers").font(.headline)
                     Spacer()
                     if t.isActive, t.bytesPerSecond > 0 {
                         Text("\(Formatters.bytes.string(fromByteCount: Int64(t.bytesPerSecond)))/s")
@@ -29,7 +29,7 @@ struct TransfersView: View {
             Divider()
 
             if t.jobs.isEmpty {
-                Text("Nessun trasferimento. Seleziona dei file e premi Scarica.")
+                Text("No transfers. Select some files and click Download.")
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 80)
             } else {
@@ -46,14 +46,14 @@ struct TransfersView: View {
 
             Divider()
             HStack {
-                Button("Apri cartella") { NSWorkspace.shared.open(model.destinationURL) }
+                Button("Open Folder") { NSWorkspace.shared.open(model.destinationURL) }
                 Spacer()
                 if t.jobs.contains(where: { if case .failed = $0.state { return true }; return $0.state == .cancelled }) {
-                    Button("Riprova") { t.retryFailed() }
+                    Button("Retry") { t.retryFailed() }
                 }
-                Button("Pulisci") { t.clearFinished() }
+                Button("Clear") { t.clearFinished() }
                     .disabled(!t.jobs.contains { $0.state.isFinished })
-                Button("Annulla tutto") { t.cancelAll() }
+                Button("Cancel All") { t.cancelAll() }
                     .disabled(!t.isActive)
             }
             .controlSize(.small)
@@ -76,7 +76,7 @@ private struct JobRow: View {
                 HStack {
                     Text(job.item.fileName).font(.callout.weight(.medium))
                     if job.deleteAfter {
-                        Text("sposta").font(.caption2).padding(.horizontal, 4)
+                        Text("move").font(.caption2).padding(.horizontal, 4)
                             .background(.orange.opacity(0.2), in: Capsule())
                     }
                 }
@@ -97,7 +97,7 @@ private struct JobRow: View {
                     Image(systemName: "magnifyingglass.circle.fill")
                 }
                 .buttonStyle(.plain).foregroundStyle(.secondary)
-                .help("Mostra nel Finder")
+                .help("Show in Finder")
             }
         }
         .padding(.horizontal, 12)
@@ -105,7 +105,7 @@ private struct JobRow: View {
     }
 
     private var runningText: String {
-        var s = "\(Formatters.bytes.string(fromByteCount: job.bytesDone)) di \(Formatters.bytes.string(fromByteCount: job.bytesTotal))"
+        var s = String(localized: "\(Formatters.bytes.string(fromByteCount: job.bytesDone)) of \(Formatters.bytes.string(fromByteCount: job.bytesTotal))")
         if job.fileCount > 1 { s += " · file \(job.currentFile)/\(job.fileCount)" }
         if let eta = model.transfers.eta(for: job) { s += " · \(Formatters.eta(eta))" }
         return s
@@ -113,12 +113,12 @@ private struct JobRow: View {
 
     private var stateText: String {
         switch job.state {
-        case .queued: return "In coda"
+        case .queued: return String(localized: "Queued")
         case .running: return ""
-        case .done: return job.deleteAfter ? "Spostato sul Mac" : "Completato"
-        case .skipped: return "Già presente, saltato"
-        case .failed(let msg): return "Errore: \(msg)"
-        case .cancelled: return "Annullato"
+        case .done: return job.deleteAfter ? String(localized: "Moved to Mac") : String(localized: "Completed")
+        case .skipped: return String(localized: "Already on the Mac, skipped")
+        case .failed(let msg): return String(localized: "Error: \(msg)")
+        case .cancelled: return String(localized: "Cancelled")
         }
     }
 

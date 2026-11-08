@@ -11,10 +11,20 @@ enum MediaKind: String, CaseIterable, Identifiable, Codable {
 
     var label: String {
         switch self {
+        case .video: return String(localized: "Video")
+        case .photo: return String(localized: "Photo")
+        case .burst: return String(localized: "Burst")
+        case .timelapse: return String(localized: "Time Lapse")
+        }
+    }
+
+    /// Untranslated prefix for group subfolders, so folder names stay the same in every language.
+    var folderPrefix: String {
+        switch self {
         case .video: return "Video"
         case .photo: return "Foto"
         case .burst: return "Burst"
-        case .timelapse: return "Time Lapse"
+        case .timelapse: return "TimeLapse"
         }
     }
 
@@ -181,16 +191,13 @@ enum Formatters {
         f.unitsStyle = .abbreviated
         f.allowedUnits = [.hour, .minute, .second]
         f.maximumUnitCount = 2
-        var cal = Calendar(identifier: .gregorian)
-        cal.locale = Locale(identifier: "it_IT")
-        f.calendar = cal
         return f
     }()
 
     /// Tempo rimanente leggibile, arrotondato per non "ballare" a ogni aggiornamento.
     static func eta(_ seconds: Double) -> String {
         guard seconds.isFinite else { return "—" }
-        if seconds < 10 { return "pochi secondi" }
+        if seconds < 10 { return String(localized: "a few seconds") }
         let step: Double = seconds < 60 ? 5 : seconds < 600 ? 10 : 60
         let rounded = (seconds / step).rounded() * step
         return durationFormatter.string(from: rounded) ?? "\(Int(rounded)) s"

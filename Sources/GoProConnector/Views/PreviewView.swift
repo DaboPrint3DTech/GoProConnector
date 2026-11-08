@@ -28,16 +28,16 @@ struct PreviewView: View {
                 .padding(.leading, 6)
                 Spacer()
                 if item.isVideo {
-                    Toggle("Qualità originale", isOn: $highQuality)
+                    Toggle("Original quality", isOn: $highQuality)
                         .toggleStyle(.switch)
                         .controlSize(.small)
-                        .help("Riproduce il file originale invece del proxy LRV a bassa risoluzione (richiede più banda)")
+                        .help("Plays the original file instead of the low-resolution LRV proxy (needs more bandwidth)")
                 }
-                Button("Scarica") { model.copy([item]) }
-                Button("Sposta") { model.move([item]) }
+                Button("Download") { model.copy([item]) }
+                Button("Move") { model.move([item]) }
                 Button(role: .destructive) { confirmDelete = true } label: { Image(systemName: "trash") }
-                    .help("Elimina dalla GoPro")
-                Button("Chiudi") { dismiss() }
+                    .help("Delete from GoPro")
+                Button("Close") { dismiss() }
                     .keyboardShortcut(.cancelAction)
             }
             .padding(10)
@@ -57,8 +57,8 @@ struct PreviewView: View {
         }
         .frame(minWidth: 820, idealWidth: 1100, minHeight: 560, idealHeight: 720)
         .onAppear { index = items.firstIndex(of: initial) ?? 0 }
-        .confirmationDialog("Eliminare \(item.fileName) dalla GoPro?", isPresented: $confirmDelete) {
-            Button("Elimina", role: .destructive) {
+        .confirmationDialog("Delete \(item.fileName) from the GoPro?", isPresented: $confirmDelete) {
+            Button("Delete", role: .destructive) {
                 let target = item
                 Task { await model.delete([target]) }
             }
@@ -68,9 +68,9 @@ struct PreviewView: View {
     private var details: String {
         var parts = [item.kind.label, Formatters.cameraDate.string(from: item.created),
                      Formatters.bytes.string(fromByteCount: item.size)]
-        if item.isGroup { parts.append("\(item.fileCount) foto") }
-        if let ch = item.chapter { parts.append("capitolo \(ch)") }
-        parts.append("\(index + 1) di \(items.count)")
+        if item.isGroup { parts.append(String(localized: "\(item.fileCount) photos")) }
+        if let ch = item.chapter { parts.append(String(localized: "chapter \(ch)")) }
+        parts.append(String(localized: "\(index + 1) of \(items.count)"))
         return parts.joined(separator: " · ")
     }
 
@@ -96,7 +96,7 @@ struct PhotoPreview: View {
             if loadingFull {
                 HStack(spacing: 6) {
                     ProgressView().controlSize(.small)
-                    Text("Caricamento immagine originale…")
+                    Text("Loading original image…")
                 }
                 .font(.caption)
                 .padding(8)
@@ -165,7 +165,7 @@ struct VideoPreview: View {
                         player = fallback
                         fallback.play()
                     } else {
-                        errorText = "Impossibile riprodurre il video in streaming.\n\(obj.error?.localizedDescription ?? "")"
+                        errorText = String(localized: "Can't stream the video.\n\(obj.error?.localizedDescription ?? "")")
                     }
                 }
             }

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>it</string>
+	<string>en</string>
 	<key>CFBundleDisplayName</key>
 	<string>GoPro Connector</string>
 	<key>CFBundleExecutable</key>
@@ -12,6 +12,11 @@
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>it.dabo.GoProConnector</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>it</string>
+	</array>
 	<key>CFBundleName</key>
 	<string>GoPro Connector</string>
 	<key>CFBundlePackageType</key>
@@ -32,11 +37,11 @@
 		<true/>
 	</dict>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>GoPro Connector usa il Bluetooth per accendere il WiFi della GoPro, come l'app Quik.</string>
+	<string>GoPro Connector uses Bluetooth to turn on the GoPro's WiFi, like the Quik app.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>GoPro Connector si collega alla tua GoPro tramite la sua rete WiFi per mostrare e scaricare i file.</string>
+	<string>GoPro Connector connects to your GoPro over its WiFi network to show and download your files.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

@@ -14,52 +14,52 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             Form {
-                Section("Cartella di destinazione") {
+                Section("Destination folder") {
                     HStack {
                         Text(destination).lineLimit(1).truncationMode(.middle)
                         Spacer()
-                        Button("Scegli…") {
+                        Button("Choose…") {
                             if let url = model.chooseFolder() { destination = url.path }
                         }
                     }
-                    Toggle("Organizza in sottocartelle per giorno (AAAA-MM-GG)", isOn: $organizeByDate)
-                    Toggle("Scarica anche i proxy a bassa risoluzione (.LRV)", isOn: $downloadLRV)
+                    Toggle("Organize into subfolders by day (YYYY-MM-DD)", isOn: $organizeByDate)
+                    Toggle("Also download low-resolution proxies (.LRV)", isOn: $downloadLRV)
                 }
-                Section("Sicurezza") {
-                    Toggle("Chiedi conferma prima di eliminare dalla camera", isOn: $confirmDelete)
-                    Text("\"Sposta\" cancella il file dalla camera solo dopo averne verificato la dimensione sul Mac.")
+                Section("Safety") {
+                    Toggle("Ask before deleting from the camera", isOn: $confirmDelete)
+                    Text("\"Move\" deletes a file from the camera only after checking its size on the Mac.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Cache") {
                     HStack {
-                        Button("Svuota cache miniature") {
+                        Button("Clear Thumbnail Cache") {
                             ThumbnailLoader.shared.clearCache(); cacheCleared = true
                         }
-                        Button("Dimentica file già scaricati") { model.history.clear() }
-                        if cacheCleared { Text("Fatto").foregroundStyle(.secondary) }
+                        Button("Forget Download History") { model.history.clear() }
+                        if cacheCleared { Text("Done").foregroundStyle(.secondary) }
                     }
                 }
             }
             .formStyle(.grouped)
-            .tabItem { Label("Generale", systemImage: "gearshape") }
+            .tabItem { Label("General", systemImage: "gearshape") }
 
             Form {
                 Section {
-                    TextField("Indirizzo IP", text: $host)
-                    TextField("Porta comandi", value: $controlPort, format: .number.grouping(.never))
-                    TextField("Porta media", value: $mediaPort, format: .number.grouping(.never))
+                    TextField("IP address", text: $host)
+                    TextField("Control port", value: $controlPort, format: .number.grouping(.never))
+                    TextField("Media port", value: $mediaPort, format: .number.grouping(.never))
                 } header: {
                     Text("Camera")
                 } footer: {
-                    Text("Valori standard GoPro HERO5–HERO8: 10.5.5.9, porte 80 e 8080. Le modifiche valgono alla prossima connessione.")
+                    Text("Standard values for GoPro HERO5–HERO8: 10.5.5.9, ports 80 and 8080. Changes apply from the next connection.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                Button("Ripristina valori predefiniti") {
+                Button("Restore Defaults") {
                     host = "10.5.5.9"; controlPort = 80; mediaPort = 8080
                 }
             }
             .formStyle(.grouped)
-            .tabItem { Label("Connessione", systemImage: "wifi") }
+            .tabItem { Label("Connection", systemImage: "wifi") }
 
             AboutView(iconSize: 84)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

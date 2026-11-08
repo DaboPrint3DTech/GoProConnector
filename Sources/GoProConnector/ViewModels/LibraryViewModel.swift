@@ -14,10 +14,10 @@ enum SortOrder: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .dateDesc: return "Più recenti"
-        case .dateAsc: return "Meno recenti"
-        case .nameAsc: return "Nome"
-        case .sizeDesc: return "Dimensione"
+        case .dateDesc: return String(localized: "Newest first")
+        case .dateAsc: return String(localized: "Oldest first")
+        case .nameAsc: return String(localized: "Name")
+        case .sizeDesc: return String(localized: "Size")
         }
     }
 }
@@ -27,9 +27,9 @@ enum DownloadFilter: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .all: return "Tutti"
-        case .notDownloaded: return "Da scaricare"
-        case .downloaded: return "Già scaricati"
+        case .all: return String(localized: "All")
+        case .notDownloaded: return String(localized: "Not downloaded")
+        case .downloaded: return String(localized: "Downloaded")
         }
     }
 }
@@ -91,14 +91,14 @@ final class LibraryViewModel {
             self.client = c
             self.info = info
             self.state = .connected
-            AppLog.write("[HTTP] connesso a \(info.modelName) (\(c.endpoint.host))")
+            AppLog.write("[HTTP] connected to \(info.modelName) (\(c.endpoint.host))")
             self.status = try? await c.status()
             startPolling()
             await refresh()
         } catch {
             self.client = nil
             self.state = .failed(Self.networkHint(for: c.endpoint.host) ?? Self.describe(error))
-            AppLog.write("[HTTP] connessione fallita: \(error.localizedDescription)")
+            AppLog.write("[HTTP] connection failed: \(error.localizedDescription)")
         }
     }
 
@@ -116,7 +116,7 @@ final class LibraryViewModel {
             Keychain.setPassword(creds.password, for: creds.ssid)
 
             if Self.networkHint(for: host) != nil {
-                linkStatus = "Collegamento del Mac alla rete \(creds.ssid)…"
+                linkStatus = String(localized: "Joining the Mac to the \(creds.ssid) network…")
                 AppLog.write("[WiFi] \(linkStatus)")
                 var lastError: Error?
                 for attempt in 1...6 {
@@ -126,26 +126,26 @@ final class LibraryViewModel {
                         break
                     } catch {
                         lastError = error
-                        AppLog.write("[WiFi] tentativo \(attempt) fallito: \(error.localizedDescription)")
-                        linkStatus = "La rete \(creds.ssid) non è ancora visibile, nuovo tentativo (\(attempt)/6)…"
+                        AppLog.write("[WiFi] attempt \(attempt) failed: \(error.localizedDescription)")
+                        linkStatus = String(localized: "The \(creds.ssid) network is not visible yet, retrying (\(attempt)/6)…")
                         try? await Task.sleep(for: .seconds(4))
                     }
                 }
                 if let lastError {
                     throw NSError(domain: "WiFi", code: 1, userInfo: [NSLocalizedDescriptionKey:
-                        "WiFi della camera acceso, ma il Mac non riesce a collegarsi a \(creds.ssid): \(lastError.localizedDescription). Prova a selezionarla dal menu WiFi."])
+                        String(localized: "The camera's WiFi is on, but the Mac can't join \(creds.ssid): \(lastError.localizedDescription). Try selecting it from the WiFi menu.")])
                 }
-                linkStatus = "In attesa dell'indirizzo IP dalla camera…"
+                linkStatus = String(localized: "Waiting for an IP address from the camera…")
                 for _ in 0..<20 where Self.networkHint(for: host) != nil {
                     try? await Task.sleep(for: .milliseconds(750))
                 }
             }
 
-            linkStatus = "Connessione alla camera…"
+            linkStatus = String(localized: "Connecting to the camera…")
             for attempt in 1...4 {
                 await connect()
                 if state == .connected { linkStatus = ""; return }
-                AppLog.write("[HTTP] tentativo \(attempt) non riuscito")
+                AppLog.write("[HTTP] attempt \(attempt) failed")
                 state = .connecting
                 try? await Task.sleep(for: .seconds(2))
             }
@@ -164,9 +164,10 @@ final class LibraryViewModel {
         let addresses = localIPv4Addresses()
         if addresses.contains(where: { $0.hasPrefix("10.5.5.") }) { return nil }
         let current = addresses.first { !$0.hasPrefix("127.") && !$0.hasPrefix("169.254.") }
-        return "Il Mac non è collegato alla rete WiFi della GoPro"
-            + (current.map { " (indirizzo attuale \($0), è un'altra rete)" } ?? "")
-            + ". Attiva il WiFi sulla camera e seleziona la sua rete (GP…) dal menu WiFi del Mac."
+        if let current {
+            return String(localized: "The Mac is not connected to the GoPro's WiFi network (current address \(current), which is a different network). Turn on WiFi on the camera and select its network (GP…) from the Mac's WiFi menu.")
+        }
+        return String(localized: "The Mac is not connected to the GoPro's WiFi network. Turn on WiFi on the camera and select its network (GP…) from the Mac's WiFi menu.")
     }
 
     private static func localIPv4Addresses() -> [String] {
@@ -239,12 +240,12 @@ final class LibraryViewModel {
         defer { isLoadingList = false }
         do {
             let list = try await client.mediaList()
-            AppLog.write("[HTTP] lista file: \(list.count) elementi")
+            AppLog.write("[HTTP] file list: \(list.count) items")
             items = list
             selection = selection.intersection(Set(list.map(\.id)))
             if let day = dayFilter, !availableDays.contains(day) { dayFilter = nil }
         } catch {
-            errorMessage = "Impossibile leggere la lista dei file: \(Self.describe(error))"
+            errorMessage = String(localized: "Can't read the file list: \(Self.describe(error))")
         }
     }
 
@@ -264,7 +265,7 @@ final class LibraryViewModel {
                     if failures >= 3 && !self.transfers.isActive {
                         self.pollTask = nil
                         self.client = nil
-                        self.state = .failed("Connessione con la camera persa. Verifica che il WiFi della GoPro sia attivo.")
+                        self.state = .failed(String(localized: "Lost connection to the camera. Check that the GoPro's WiFi is on."))
                         return
                     }
                 }
@@ -275,9 +276,9 @@ final class LibraryViewModel {
     static func describe(_ error: Error) -> String {
         if let e = error as? URLError {
             switch e.code {
-            case .timedOut: return "tempo scaduto. Il Mac è collegato al WiFi della GoPro?"
+            case .timedOut: return String(localized: "timed out. Is the Mac connected to the GoPro's WiFi?")
             case .cannotConnectToHost, .cannotFindHost, .notConnectedToInternet, .networkConnectionLost:
-                return "camera non raggiungibile. Collega il Mac alla rete WiFi della GoPro."
+                return String(localized: "camera not reachable. Connect the Mac to the GoPro's WiFi network.")
             default: break
             }
         }
@@ -391,7 +392,7 @@ final class LibraryViewModel {
                 try await client.delete(item)
                 deleted.append(item)
             } catch {
-                errorMessage = "Errore cancellando \(item.fileName): \(Self.describe(error))"
+                errorMessage = String(localized: "Error deleting \(item.fileName): \(Self.describe(error))")
                 break
             }
         }
@@ -411,7 +412,7 @@ final class LibraryViewModel {
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
-        panel.prompt = "Scegli"
+        panel.prompt = String(localized: "Choose")
         panel.directoryURL = destinationURL
         return panel.runModal() == .OK ? panel.url : nil
     }
