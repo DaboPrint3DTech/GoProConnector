@@ -22,6 +22,8 @@ App nativa macOS (SwiftUI) per sfogliare e scaricare via WiFi i file di una **Go
   impostate all'ora della ripresa; opzionalmente si scaricano anche i file `.LRV`.
 - Coda dei trasferimenti con avanzamento, velocità, **tempo stimato** (e ora di fine), annulla e riprova.
   La prima stima usa la velocità dei download precedenti e si affina dopo un paio di secondi.
+- **Info**: menu GoPro Connector › Informazioni (o Impostazioni › Info) con versione e link al profilo
+  GitHub [DaboPrint3DTech](https://github.com/DaboPrint3DTech); gli stessi link sono nel menu Aiuto.
 
 ## Compilare e installare
 

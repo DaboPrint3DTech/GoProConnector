@@ -60,7 +60,11 @@ struct SettingsView: View {
             }
             .formStyle(.grouped)
             .tabItem { Label("Connessione", systemImage: "wifi") }
+
+            AboutView(iconSize: 84)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .tabItem { Label("Info", systemImage: "info.circle") }
         }
-        .frame(width: 540, height: 400)
+        .frame(width: 540, height: 430)
     }
 }

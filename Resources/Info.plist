@@ -2,42 +2,42 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key>
-    <string>GoPro Connector</string>
-    <key>CFBundleDisplayName</key>
-    <string>GoPro Connector</string>
-    <key>CFBundleIdentifier</key>
-    <string>it.dabo.GoProConnector</string>
-    <key>CFBundleExecutable</key>
-    <string>GoProConnector</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>CFBundleIconFile</key>
-    <string>AppIcon</string>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>it</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>14.0</string>
-    <key>LSApplicationCategoryType</key>
-    <string>public.app-category.photography</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>NSPrincipalClass</key>
-    <string>NSApplication</string>
-    <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>GoPro Connector usa il Bluetooth per accendere il WiFi della GoPro, come l'app Quik.</string>
-    <key>NSLocalNetworkUsageDescription</key>
-    <string>GoPro Connector si collega alla tua GoPro tramite la sua rete WiFi per mostrare e scaricare i file.</string>
-    <key>NSAppTransportSecurity</key>
-    <dict>
-        <key>NSAllowsArbitraryLoads</key>
-        <true/>
-        <key>NSAllowsLocalNetworking</key>
-        <true/>
-    </dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>it</string>
+	<key>CFBundleDisplayName</key>
+	<string>GoPro Connector</string>
+	<key>CFBundleExecutable</key>
+	<string>GoProConnector</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>it.dabo.GoProConnector</string>
+	<key>CFBundleName</key>
+	<string>GoPro Connector</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.1</string>
+	<key>CFBundleVersion</key>
+	<string>2</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.photography</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>GoPro Connector usa il Bluetooth per accendere il WiFi della GoPro, come l'app Quik.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>GoPro Connector si collega alla tua GoPro tramite la sua rete WiFi per mostrare e scaricare i file.</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
 </dict>
 </plist>

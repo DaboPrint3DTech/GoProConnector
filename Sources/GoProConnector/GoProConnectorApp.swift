@@ -28,6 +28,11 @@ struct GoProConnectorApp: App {
                 .frame(minWidth: 900, minHeight: 560)
         }
         .commands {
+            CommandGroup(replacing: .appInfo) { AboutMenuButton() }
+            CommandGroup(replacing: .help) {
+                Button("DaboPrint3DTech su GitHub") { NSWorkspace.shared.open(AppLinks.githubProfile) }
+                Button("Codice sorgente di GoPro Connector") { NSWorkspace.shared.open(AppLinks.repository) }
+            }
             CommandGroup(replacing: .newItem) {}
             CommandMenu("Camera") {
                 Button("Connetti") { Task { await model.smartConnect() } }
@@ -59,6 +64,13 @@ struct GoProConnectorApp: App {
                 Divider()
             }
         }
+
+        Window("Informazioni su GoPro Connector", id: "about") {
+            AboutView()
+        }
+        .windowResizability(.contentSize)
+        .windowStyle(.hiddenTitleBar)
+        .defaultPosition(.center)
 
         Settings {
             SettingsView()
