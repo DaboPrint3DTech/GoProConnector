@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Finto server HTTP che imita l'API WiFi di una GoPro HERO8 per provare l'app senza camera.
+"""Mock HTTP server that imitates the WiFi API of a GoPro HERO8, to try the app without a camera.
 
-Uso:
-    swift tools/make_mock_assets.swift tools/mock_assets   # una volta sola
+Usage:
+    swift tools/make_mock_assets.swift tools/mock_assets   # only once
     python3 tools/mock_gopro.py --port 18765 --assets tools/mock_assets
 
-Poi in GoPro Connector > Impostazioni > Connessione: host 127.0.0.1, porte 18765 / 18765.
+Then in GoPro Connector > Settings > Connection: host 127.0.0.1, ports 18765 / 18765.
 """
 import argparse
 import json
@@ -103,7 +103,7 @@ class Handler(BaseHTTPRequestHandler):
                 except (BrokenPipeError, ConnectionResetError):
                     return
                 remaining -= len(chunk)
-                time.sleep(0.01)  # simula la banda limitata del WiFi della camera
+                time.sleep(0.01)  # simulates the limited bandwidth of the camera's WiFi
 
     def do_HEAD(self):
         self.do_GET()
@@ -151,5 +151,5 @@ if __name__ == "__main__":
     a = ap.parse_args()
     ASSETS = a.assets
     build_media()
-    print("Mock GoPro su http://127.0.0.1:%d" % a.port)
+    print("Mock GoPro on http://127.0.0.1:%d" % a.port)
     ThreadingHTTPServer(("127.0.0.1", a.port), Handler).serve_forever()

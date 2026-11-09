@@ -43,7 +43,7 @@ struct DaySection: Identifiable {
 @MainActor
 @Observable
 final class LibraryViewModel {
-    // Connessione
+    // Connection
     private(set) var state: ConnectionState = .disconnected
     private(set) var client: GoProClient?
     private(set) var info: CameraInfo?
@@ -55,7 +55,7 @@ final class LibraryViewModel {
     var selection: Set<MediaItem.ID> = []
     var anchorID: MediaItem.ID?
 
-    // Filtri
+    // Filters
     var searchText = ""
     var kindFilter: MediaKind? = nil
     var downloadFilter: DownloadFilter = .all
@@ -81,7 +81,7 @@ final class LibraryViewModel {
         transfers.onDeletedFromCamera = { [weak self] item in self?.removeLocally([item]) }
     }
 
-    // MARK: - Connessione
+    // MARK: - Connection
 
     func connect() async {
         state = .connecting
@@ -102,7 +102,7 @@ final class LibraryViewModel {
         }
     }
 
-    /// Come Quik: accende il WiFi della camera via Bluetooth, collega il Mac alla sua rete e si connette.
+    /// Like Quik: turns on the camera's WiFi over Bluetooth, joins the Mac to its network and connects.
     func connectViaBluetooth() async {
         guard !isLinking else { return }
         isLinking = true
@@ -157,8 +157,8 @@ final class LibraryViewModel {
         linkStatus = ""
     }
 
-    /// Se la camera è sulla sua rete standard (10.5.5.x) ma il Mac non ha un indirizzo in quella rete,
-    /// il problema è quasi certamente il WiFi: lo diciamo esplicitamente.
+    /// If the camera is on its standard network (10.5.5.x) but the Mac has no address on it,
+    /// the problem is almost certainly the WiFi, so we say so explicitly.
     static func networkHint(for host: String) -> String? {
         guard host.hasPrefix("10.5.5.") else { return nil }
         let addresses = localIPv4Addresses()
@@ -185,7 +185,7 @@ final class LibraryViewModel {
         return result
     }
 
-    /// Nome della connessione (es. "Ethernet") che resta disponibile per Internet oltre alla rete della GoPro.
+    /// Name of the connection (e.g. "Ethernet") still available for Internet besides the GoPro network.
     static func otherConnectionName() -> String? {
         var bsdNames: [String] = []
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
@@ -205,7 +205,7 @@ final class LibraryViewModel {
         return match.flatMap { SCNetworkInterfaceGetLocalizedDisplayName($0) as String? } ?? bsd
     }
 
-    /// Se il Mac è già sulla rete della GoPro si connette direttamente, altrimenti passa dal Bluetooth.
+    /// Connects directly if the Mac is already on the GoPro network, otherwise goes through Bluetooth.
     func smartConnect() async {
         if Self.networkHint(for: GoProEndpoint.fromDefaults().host) == nil {
             await connect()
@@ -214,7 +214,7 @@ final class LibraryViewModel {
         }
     }
 
-    /// Disconnette e spegne il WiFi della camera, così il Mac torna sulla rete di casa (e su Internet).
+    /// Disconnects and turns off the camera's WiFi, so the Mac goes back to the home network (and the Internet).
     func disconnectAndRestoreNetwork() async {
         disconnect()
         await bluetooth.turnOffWiFi()
@@ -249,7 +249,7 @@ final class LibraryViewModel {
         }
     }
 
-    /// Interroga periodicamente lo stato: mantiene vivo il WiFi della camera e rileva le disconnessioni.
+    /// Polls the status periodically: keeps the camera's WiFi alive and detects disconnections.
     private func startPolling() {
         pollTask?.cancel()
         pollTask = Task { [weak self] in
@@ -285,7 +285,7 @@ final class LibraryViewModel {
         return error.localizedDescription
     }
 
-    // MARK: - Filtri
+    // MARK: - Filters
 
     var filteredItems: [MediaItem] {
         let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
@@ -337,7 +337,7 @@ final class LibraryViewModel {
 
     var totalSize: Int64 { items.reduce(0) { $0 + $1.size } }
 
-    // MARK: - Selezione
+    // MARK: - Selection
 
     var selectedItems: [MediaItem] {
         filteredItems.filter { selection.contains($0.id) }
@@ -365,20 +365,20 @@ final class LibraryViewModel {
     func selectAll() { selection = Set(filteredItems.map(\.id)) }
     func deselectAll() { selection = [] }
 
-    // MARK: - Azioni
+    // MARK: - Actions
 
     var destinationURL: URL {
         let path = UserDefaults.standard.string(forKey: SettingsKeys.destination) ?? SettingsKeys.defaultDestination
         return URL(fileURLWithPath: (path as NSString).expandingTildeInPath, isDirectory: true)
     }
 
-    /// Copia (scarica) i file sul Mac.
+    /// Copies (downloads) the files to the Mac.
     func copy(_ items: [MediaItem], to folder: URL? = nil) {
         guard !items.isEmpty else { return }
         transfers.enqueue(items, to: folder ?? destinationURL, deleteAfter: false)
     }
 
-    /// Sposta: scarica, verifica e poi cancella dalla camera.
+    /// Move: downloads, verifies, then deletes from the camera.
     func move(_ items: [MediaItem], to folder: URL? = nil) {
         guard !items.isEmpty else { return }
         transfers.enqueue(items, to: folder ?? destinationURL, deleteAfter: true)

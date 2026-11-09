@@ -49,7 +49,7 @@ struct ContentView: View {
         }
         .task {
             guard model.state == .disconnected else { return }
-            // Se il Mac non è sulla rete della GoPro ma una camera è già stata abbinata, si usa il Bluetooth.
+            // If the Mac isn't on the GoPro network but a camera was paired before, use Bluetooth.
             let host = GoProEndpoint.fromDefaults().host
             if LibraryViewModel.networkHint(for: host) != nil,
                UserDefaults.standard.string(forKey: "bleCameraIdentifier") != nil {

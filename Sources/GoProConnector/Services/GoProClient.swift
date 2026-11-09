@@ -1,8 +1,8 @@
 import Foundation
 
-/// Indirizzo della camera. La HERO8 in modalità access point risponde su 10.5.5.9:
-/// - porta 80   -> comandi (gpControl)
-/// - porta 8080 -> server dei media (lista, thumbnail, download)
+/// Camera address. In access point mode the HERO8 answers on 10.5.5.9:
+/// - port 80   -> commands (gpControl)
+/// - port 8080 -> media server (list, thumbnails, downloads)
 struct GoProEndpoint: Equatable, Sendable {
     var host: String = "10.5.5.9"
     var controlPort: Int = 80
@@ -98,7 +98,7 @@ final class GoProClient: Sendable {
         return c.url!
     }
 
-    // MARK: - Richieste
+    // MARK: - Requests
 
     private func getJSON(_ url: URL, timeout: TimeInterval = 8) async throws -> [String: Any] {
         var req = URLRequest(url: url)
@@ -128,7 +128,7 @@ final class GoProClient: Sendable {
     func status() async throws -> CameraStatus {
         let json = try await getJSON(controlURL("gp/gpControl/status"), timeout: 4)
         let status = json["status"] as? [String: Any] ?? [:]
-        // 70 = batteria interna %, 54 = spazio libero SD in KB, 33 = stato SD (0 = ok)
+        // 70 = internal battery %, 54 = free SD space in KB, 33 = SD status (0 = ok)
         return CameraStatus(
             batteryPercent: status.int("70"),
             freeSpaceBytes: status.int("54").map { Int64($0) * 1024 },

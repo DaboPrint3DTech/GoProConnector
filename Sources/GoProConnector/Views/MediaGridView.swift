@@ -172,7 +172,7 @@ struct MediaContextMenu: View {
     let item: MediaItem
     let onDelete: ([MediaItem]) -> Void
 
-    /// Se l'elemento cliccato fa parte della selezione si agisce su tutta la selezione.
+    /// If the clicked item is part of the selection, act on the whole selection.
     private var targets: [MediaItem] {
         model.selection.contains(item.id) ? model.selectedItems : [item]
     }

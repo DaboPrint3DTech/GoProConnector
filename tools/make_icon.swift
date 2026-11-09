@@ -1,6 +1,6 @@
-// Genera Resources/AppIcon.icns (icona dell'app) disegnandola in vettoriale.
-// Fotocamera + onde WiFi, con il "pollicione" arancione di DaboPrint3D in un badge in basso a destra.
-// Uso: swift tools/make_icon.swift Resources/AppIcon.icns [anteprima.png]
+// Generates Resources/AppIcon.icns (the app icon) by drawing it as vector graphics.
+// Camera + WiFi waves, with the orange DaboPrint3D thumbs-up in a badge at the bottom right.
+// Usage: swift tools/make_icon.swift Resources/AppIcon.icns [preview.png]
 import AppKit
 
 let output = CommandLine.arguments.dropFirst().first ?? "Resources/AppIcon.icns"
@@ -29,18 +29,18 @@ func withShadow(blur: CGFloat, dy: CGFloat, alpha: CGFloat, _ draw: () -> Void) 
     NSGraphicsContext.restoreGraphicsState()
 }
 
-// Colori del logo DaboPrint3D
+// DaboPrint3D logo colours
 let orangeLight = rgb(0xFFA448)
 let orange = rgb(0xF47F22)
 let orangeDark = rgb(0xD95F12)
 let ink = rgb(0x1E1E1E)
 let teal = rgb(0x2AA8A2)
 
-/// Pollice in su in stile cartoon (contorno scuro spesso, arancio sfumato), in un sistema locale ~1000×1000.
+/// Cartoon thumbs-up (thick dark outline, orange gradient), in a local ~1000×1000 coordinate system.
 func drawThumbsUp() {
-    let ow: CGFloat = 30  // spessore contorno
+    let ow: CGFloat = 30  // outline width
 
-    // Polsino + palmo + pollice: un'unica sagoma con un solo contorno esterno
+    // Cuff + palm + thumb: one shape with a single outer outline
     let cuff = rounded(150, 230, 200, 330, 55)
     let palm = rounded(270, 210, 370, 440, 140)
     let thumb = rounded(370, 520, 195, 410, 97)
@@ -53,7 +53,7 @@ func drawThumbsUp() {
     body.stroke()
     NSGradient(colors: [orangeLight, orange, orangeDark])!.draw(in: body, angle: -65)
 
-    // Polsino leggermente più scuro, con il bordo scuro dell'apertura
+    // Slightly darker cuff, with the dark rim of the opening
     orangeDark.withAlphaComponent(0.35).setFill()
     rounded(150, 230, 190, 330, 55).fill()
     ink.setFill()
@@ -66,7 +66,7 @@ func drawThumbsUp() {
     seam.lineCapStyle = .round
     seam.stroke()
 
-    // Piega tra pollice e indice
+    // Crease between thumb and index finger
     let crease = NSBezierPath()
     crease.move(to: NSPoint(x: 400, y: 480))
     crease.curve(to: NSPoint(x: 515, y: 560), controlPoint1: NSPoint(x: 450, y: 478), controlPoint2: NSPoint(x: 495, y: 510))
@@ -74,8 +74,8 @@ func drawThumbsUp() {
     crease.lineCapStyle = .round
     crease.stroke()
 
-    // Quattro dita piegate, dalla più bassa alla più alta (l'indice sta sopra)
-    let fingers: [(CGFloat, CGFloat, CGFloat)] = [  // x, y, larghezza
+    // Four curled fingers, from the lowest to the highest (the index finger is on top)
+    let fingers: [(CGFloat, CGFloat, CGFloat)] = [  // x, y, width
         (505, 212, 225), (515, 330, 250), (515, 448, 262), (500, 566, 272),
     ]
     for (x, y, w) in fingers {
@@ -84,38 +84,38 @@ func drawThumbsUp() {
         ink.setStroke()
         f.lineWidth = ow
         f.stroke()
-        rgb(0xFFFFFF, 0.35).setFill()  // riflesso sulle nocche
+        rgb(0xFFFFFF, 0.35).setFill()  // highlight on the knuckles
         NSBezierPath(ovalIn: NSRect(x: x + w - 100, y: y + 74, width: 58, height: 24)).fill()
     }
 
-    // Riflesso lucido sul pollice
+    // Glossy highlight on the thumb
     rgb(0xFFFFFF, 0.55).setFill()
     NSBezierPath(ovalIn: NSRect(x: 405, y: 750, width: 50, height: 130)).fill()
 }
 
-/// Disegna l'icona in un canvas 1024×1024 (coordinate con origine in basso a sinistra).
+/// Draws the icon on a 1024×1024 canvas (origin at the bottom left).
 func drawIcon() {
-    // Sfondo "squircle" in stile macOS con leggera ombra
+    // macOS-style "squircle" background with a soft shadow
     let tilePath = rounded(100, 100, 824, 824, 185)
     withShadow(blur: 24, dy: -10, alpha: 0.35) { rgb(0x0B3A8C).setFill(); tilePath.fill() }
     NSGradient(colors: [rgb(0x3A8DFF), rgb(0x1452C4), rgb(0x0B2F78)])!.draw(in: tilePath, angle: -90)
 
-    // Corpo della camera
+    // Camera body
     let bodyPath = rounded(196, 250, 420, 340, 86)
     withShadow(blur: 18, dy: -8, alpha: 0.30) { rgb(0xF4F6FA).setFill(); bodyPath.fill() }
     NSGradient(colors: [rgb(0xFFFFFF), rgb(0xDCE2EC)])!.draw(in: bodyPath, angle: -90)
 
-    // Tasto di scatto
+    // Shutter button
     rgb(0xDCE2EC).setFill()
     rounded(466, 578, 88, 26, 10).fill()
 
-    // Display frontale
+    // Front display
     rgb(0x1B2433).setFill()
     rounded(234, 490, 104, 66, 15).fill()
     rgb(0x3A8DFF, 0.55).setFill()
     rounded(245, 501, 82, 44, 8).fill()
 
-    // Obiettivo
+    // Lens
     let c = NSPoint(x: 452, y: 404)
     rgb(0x1B2433).setFill(); circle(c, 122).fill()
     rgb(0x3E4A5E).setFill(); circle(c, 96).fill()
@@ -127,7 +127,7 @@ func drawIcon() {
     rgb(0xFFFFFF, 0.25).setFill()
     NSBezierPath(ovalIn: NSRect(x: c.x + 17, y: c.y - 37, width: 13, height: 13)).fill()
 
-    // Onde WiFi sopra la camera
+    // WiFi waves above the camera
     let w = NSPoint(x: 406, y: 652)
     rgb(0xFFFFFF).setStroke()
     for r: CGFloat in [62, 124, 186] {
@@ -140,7 +140,7 @@ func drawIcon() {
     rgb(0xFFFFFF).setFill()
     circle(NSPoint(x: w.x, y: w.y + 14), 21).fill()
 
-    // Badge DaboPrint3D: cerchio bianco con anello verde acqua e il pollicione arancione
+    // DaboPrint3D badge: white circle with a teal ring and the orange thumbs-up
     let b = NSPoint(x: 738, y: 288)
     withShadow(blur: 20, dy: -8, alpha: 0.40) { ink.setFill(); circle(b, 152).fill() }
     teal.setFill(); circle(b, 146).fill()
@@ -181,7 +181,7 @@ for base in [16, 32, 128, 256, 512] {
     try! png(size: base).write(to: iconset.appendingPathComponent("icon_\(base)x\(base).png"))
     try! png(size: base * 2).write(to: iconset.appendingPathComponent("icon_\(base)x\(base)@2x.png"))
 }
-if CommandLine.arguments.count > 2 {  // anteprima PNG opzionale (1024 px e 64 px)
+if CommandLine.arguments.count > 2 {  // optional PNG preview (1024 px and 64 px)
     let preview = URL(fileURLWithPath: CommandLine.arguments[2])
     try! png(size: 1024).write(to: preview)
     try! png(size: 64).write(to: preview.deletingPathExtension().appendingPathExtension("64.png"))
@@ -192,4 +192,4 @@ p.executableURL = URL(fileURLWithPath: "/usr/bin/iconutil")
 p.arguments = ["-c", "icns", iconset.path, "-o", output]
 try! p.run()
 p.waitUntilExit()
-print(p.terminationStatus == 0 ? "Creato \(output)" : "iconutil fallito")
+print(p.terminationStatus == 0 ? "Created \(output)" : "iconutil failed")

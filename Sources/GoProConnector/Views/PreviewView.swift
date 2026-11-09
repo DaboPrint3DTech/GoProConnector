@@ -152,7 +152,7 @@ struct VideoPreview: View {
         guard let client = model.client else { return }
         let lrv = client.lrvURL(for: item)
         let url = (!highQuality && lrv != nil) ? lrv! : client.downloadURL(for: item)
-        // L'estensione .LRV non è riconosciuta da AVFoundation: dichiariamo il tipo MIME esplicitamente.
+        // AVFoundation doesn't recognise the .LRV extension, so the MIME type is set explicitly.
         let asset = AVURLAsset(url: url, options: [AVURLAssetOverrideMIMETypeKey: "video/mp4"])
         let playerItem = AVPlayerItem(asset: asset)
         let isLRV = url == lrv
@@ -160,7 +160,7 @@ struct VideoPreview: View {
             if obj.status == .failed {
                 Task { @MainActor in
                     if isLRV {
-                        // fallback: alcuni video non hanno il proxy LRV
+                        // fallback: some videos have no LRV proxy
                         let fallback = AVPlayer(url: client.downloadURL(for: item))
                         player = fallback
                         fallback.play()

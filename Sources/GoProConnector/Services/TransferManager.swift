@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// Ricorda quali file sono già stati scaricati (persistente su disco).
+/// Remembers which files were already downloaded (saved on disk).
 @MainActor
 @Observable
 final class DownloadHistory {
@@ -73,15 +73,15 @@ struct TransferJob: Identifiable {
 @Observable
 final class TransferManager {
     private(set) var jobs: [TransferJob] = []
-    /// Velocità media sugli ultimi secondi (aggiornata ogni secondo, anche se il trasferimento si blocca).
+    /// Average speed over the last few seconds (updated every second, even if the transfer stalls).
     private(set) var bytesPerSecond: Double = 0
-    /// Secondi stimati per finire tutta la coda; nil se non c'è ancora una stima.
+    /// Estimated seconds to finish the whole queue; nil when there is no estimate yet.
     private(set) var etaSeconds: Double?
-    /// true quando la stima usa la velocità dei download precedenti (la misura non è ancora pronta).
+    /// true when the estimate uses the speed of previous downloads (no measurement yet).
     private(set) var etaIsRough = false
     var lastError: String?
 
-    /// Chiamato quando un elemento è stato cancellato dalla camera dopo uno "sposta".
+    /// Called when an item was deleted from the camera after a "move".
     var onDeletedFromCamera: ((MediaItem) -> Void)?
 
     let history: DownloadHistory
@@ -89,7 +89,7 @@ final class TransferManager {
     private var worker: Task<Void, Never>?
     var clientProvider: () -> GoProClient? = { nil }
 
-    // Misura della velocità
+    // Speed measurement
     private static let speedWindow: TimeInterval = 8
     private static let typicalSpeedKey = "typicalDownloadSpeed"
     private var transferredTotal: Int64 = 0
@@ -118,7 +118,7 @@ final class TransferManager {
         jobs.filter { !$0.state.isFinished }.reduce(Int64(0)) { $0 + max(0, $1.bytesTotal - $1.bytesDone) }
     }
 
-    /// Es. "mancano circa 3 min 20 s · fine verso le 15:42".
+    /// E.g. "About 3 min 20 s left · done around 15:42".
     var etaLine: String {
         guard let eta = etaSeconds else {
             return hasMeasurement ? String(localized: "Waiting for data from the camera…")
@@ -130,7 +130,7 @@ final class TransferManager {
                           : String(localized: "\(left) left · done around \(finish)")
     }
 
-    /// Riga compatta per la barra di stato.
+    /// Compact line for the status bar.
     var summaryLine: String {
         var parts: [String] = []
         if bytesPerSecond > 0 { parts.append("\(Formatters.bytes.string(fromByteCount: Int64(bytesPerSecond)))/s") }
@@ -143,7 +143,7 @@ final class TransferManager {
         return String(localized: "Download: \(parts.joined(separator: " · "))")
     }
 
-    /// Tempo stimato per finire un singolo elemento in corso.
+    /// Estimated time to finish a single running item.
     func eta(for job: TransferJob) -> Double? {
         guard job.state == .running, hasMeasurement, bytesPerSecond > 1024 else { return nil }
         return Double(max(0, job.bytesTotal - job.bytesDone)) / bytesPerSecond
@@ -187,7 +187,7 @@ final class TransferManager {
         startIfNeeded()
     }
 
-    // MARK: - Esecuzione
+    // MARK: - Running
 
     private func fileNames(for item: MediaItem) -> [String] {
         var names = item.allFileNames
@@ -206,7 +206,7 @@ final class TransferManager {
         }
     }
 
-    // MARK: - Velocità e tempo stimato
+    // MARK: - Speed and estimated time
 
     private func startTicker() {
         guard ticker == nil else { return }
@@ -225,7 +225,7 @@ final class TransferManager {
     private func stopTicker() {
         ticker?.cancel()
         ticker = nil
-        // Ricorda la velocità media: servirà per stimare subito il prossimo download.
+        // Remember the average speed: it gives an immediate estimate for the next download.
         if let start = runStart {
             let bytes = transferredTotal - start.bytes
             let elapsed = Date().timeIntervalSince(start.time)
@@ -280,7 +280,7 @@ final class TransferManager {
                 lastError = error.localizedDescription
             }
             if Task.isCancelled {
-                // l'annullamento ha interrotto il job corrente: si riparte con i successivi
+                // cancelling stopped the current job: carry on with the next ones
                 worker = nil
                 startIfNeeded()
                 return
@@ -293,7 +293,7 @@ final class TransferManager {
 
     private func setState(_ id: UUID, _ state: TransferState) {
         guard let i = jobs.firstIndex(where: { $0.id == id }) else { return }
-        // non sovrascrivere un annullamento esplicito
+        // don't overwrite an explicit cancellation
         if jobs[i].state == .cancelled && state != .cancelled { return }
         jobs[i].state = state
     }
@@ -402,8 +402,8 @@ final class TransferManager {
         return candidate
     }
 
-    /// Imposta data di creazione/modifica del file uguale all'ora della ripresa
-    /// (l'ora della camera è "da parete", quindi la riportiamo nel fuso locale).
+    /// Sets the file's creation/modification date to the time of capture
+    /// (the camera time is "wall clock" time, so it is converted to the local time zone).
     private func applyCameraDate(_ date: Date, to url: URL) {
         let offset = TimeInterval(TimeZone.current.secondsFromGMT(for: date))
         let local = date.addingTimeInterval(-offset)

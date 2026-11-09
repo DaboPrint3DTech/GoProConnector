@@ -2,11 +2,11 @@ import CoreBluetooth
 import Foundation
 import Observation
 
-/// Attiva il WiFi (access point) della GoPro via Bluetooth Low Energy, come fa l'app Quik,
-/// e legge nome rete e password direttamente dalla camera.
+/// Turns on the GoPro's WiFi access point over Bluetooth Low Energy, like the Quik app does,
+/// and reads the network name and password straight from the camera.
 ///
-/// La prima volta la camera deve essere in modalità abbinamento
-/// (Preferenze › Connessioni › Connetti dispositivo › App GoPro) e macOS chiederà di confermare l'abbinamento.
+/// The first time, the camera must be in pairing mode
+/// (Preferences › Connections › Connect Device › GoPro App) and macOS asks to confirm the pairing.
 @MainActor
 @Observable
 final class GoProBluetooth: NSObject {
@@ -25,7 +25,7 @@ final class GoProBluetooth: NSObject {
         let peripheral: CBPeripheral
     }
 
-    /// Una camera può comparire con più identità Bluetooth: per la scelta si raggruppano per nome.
+    /// A camera can show up with several Bluetooth identities: for the choice they are grouped by name.
     struct CameraChoice: Identifiable {
         let name: String
         let rssi: Int
@@ -38,7 +38,7 @@ final class GoProBluetooth: NSObject {
             CameraChoice(name: name, rssi: list.map(\.rssi).max() ?? -100, identities: list.count)
         }.sorted { $0.rssi > $1.rssi }
     }
-    /// GoPro trovate durante la scansione; se sono più di una l'utente sceglie la sua.
+    /// GoPro cameras found while scanning; if there is more than one, the user picks theirs.
     private(set) var candidates: [Candidate] = []
     private(set) var awaitingChoice = false
     private var chosenName: String?
@@ -46,7 +46,7 @@ final class GoProBluetooth: NSObject {
 
     var rememberedCameraName: String? { UserDefaults.standard.string(forKey: Self.savedNameKey) }
 
-    // UUID GoPro
+    // GoPro UUIDs
     private static func gp(_ n: String) -> CBUUID { CBUUID(string: "b5f9\(n)-aa8d-11e3-9046-0002a5d5c51b") }
     static let controlService = CBUUID(string: "FEA6")
     static let wifiService = gp("0001")
@@ -94,7 +94,7 @@ final class GoProBluetooth: NSObject {
 
     // MARK: - API
 
-    /// Esegue tutta la sequenza e restituisce le credenziali WiFi della camera.
+    /// Runs the whole sequence and returns the camera's WiFi credentials.
     func activateWiFi() async throws -> Credentials {
         phase = .working
         do {
@@ -109,7 +109,7 @@ final class GoProBluetooth: NSObject {
         }
     }
 
-    /// Spegne l'access point della camera (comando 0x17 = 0): il Mac torna da solo sulla rete di casa.
+    /// Turns off the camera's access point (command 0x17 = 0): the Mac goes back to the home network by itself.
     func turnOffWiFi() async {
         guard let p = peripheral, p.state == .connected, let command = characteristics[Self.commandChar] else {
             log("Skipping WiFi off: camera not connected over Bluetooth")
@@ -130,11 +130,11 @@ final class GoProBluetooth: NSObject {
         characteristics = [:]
     }
 
-    // MARK: - Sequenza
+    // MARK: - Sequence
 
     private func runSequence() async throws -> Credentials {
         if central == nil {
-            central = CBCentralManager(delegate: self, queue: nil)   // delegate sulla main queue
+            central = CBCentralManager(delegate: self, queue: nil)   // delegate on the main queue
         }
         guard let central else { throw BLEError.message(String(localized: "Bluetooth not available.")) }
 
@@ -144,13 +144,13 @@ final class GoProBluetooth: NSObject {
         }
         try checkState(central.state)
 
-        // 1. Camera già connessa in questa sessione
+        // 1. Camera already connected in this session
         if let existing = peripheral, existing.state == .connected {
             status(String(localized: "Camera already connected over Bluetooth"))
             return try await pairAndActivate(existing)
         }
 
-        // 2. Camera abbinata in precedenza
+        // 2. Camera paired earlier
         if let idString = UserDefaults.standard.string(forKey: Self.savedPeripheralKey),
            let id = UUID(uuidString: idString),
            let known = central.retrievePeripherals(withIdentifiers: [id]).first {
@@ -165,7 +165,7 @@ final class GoProBluetooth: NSObject {
             }
         }
 
-        // 3. Scansione: si provano tutte le identità Bluetooth della camera scelta
+        // 3. Scan: try every Bluetooth identity of the chosen camera
         let identities = try await scanForCamera(central)
         var lastError: Error?
         for (i, p) in identities.enumerated() {
@@ -186,7 +186,7 @@ final class GoProBluetooth: NSObject {
     }
 
     private func pairAndActivate(_ p: CBPeripheral) async throws -> Credentials {
-        // 2. Servizi e caratteristiche
+        // 2. Services and characteristics
         if characteristics[Self.commandChar] == nil || characteristics[Self.ssidChar] == nil {
             status(String(localized: "Reading the camera's services…"))
             characteristics = [:]
@@ -199,20 +199,20 @@ final class GoProBluetooth: NSObject {
             throw BLEError.message(String(localized: "The camera doesn't expose the expected GoPro services (found: \(characteristics.keys.map(\.uuidString).sorted().joined(separator: ", ")))."))
         }
 
-        // 3. Notifiche delle risposte (qui macOS può chiedere l'abbinamento)
+        // 3. Response notifications (this is where macOS may ask to pair)
         status(String(localized: "Pairing / authorization… (if macOS shows a request, click Connect)"))
         try await wait(40, String(localized: "Bluetooth pairing")) { p.setNotifyValue(true, for: response) }
 
-        // 4. Credenziali WiFi
+        // 4. WiFi credentials
         status(String(localized: "Reading network name and password…"))
         let ssid = try await readString(ssidC, from: p)
         let password = try await readString(passC, from: p)
         log("SSID read: \(ssid)")
-        // abbinamento riuscito: da ora questa è la camera da usare
+        // pairing succeeded: from now on this is the camera to use
         UserDefaults.standard.set(p.identifier.uuidString, forKey: Self.savedPeripheralKey)
         UserDefaults.standard.set(p.name ?? ssid, forKey: Self.savedNameKey)
 
-        // 5. Accensione dell'access point WiFi: comando 0x17 (AP control) = 1
+        // 5. Turn on the WiFi access point: command 0x17 (AP control) = 1
         status(String(localized: "Turning on the camera's WiFi…"))
         apResponseStatus = nil
         waitingForAPResponse = true
@@ -291,7 +291,7 @@ final class GoProBluetooth: NSObject {
         return s
     }
 
-    // MARK: - Utilità
+    // MARK: - Helpers
 
     private func wait(_ seconds: Double, _ what: String, start: () -> Void) async throws {
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
@@ -343,7 +343,7 @@ final class GoProBluetooth: NSObject {
     }
 }
 
-// MARK: - Delegate (chiamati sulla main queue)
+// MARK: - Delegate (called on the main queue)
 
 extension GoProBluetooth: CBCentralManagerDelegate, CBPeripheralDelegate {
     nonisolated func centralManagerDidUpdateState(_ central: CBCentralManager) {
@@ -463,13 +463,13 @@ extension GoProBluetooth: CBCentralManagerDelegate, CBPeripheralDelegate {
                 if uuid == Self.apPowerChar { finish(error) }
                 return
             }
-            // per GP-0072 si attende la notifica su GP-0073; GP-0004 non ha risposta separata
+            // for GP-0072 we wait for the notification on GP-0073; GP-0004 has no separate response
             if uuid == Self.apPowerChar { finish() }
         }
     }
 }
 
-/// Log su file per la diagnosi: ~/Library/Logs/GoProConnector.log
+/// Diagnostic log file: ~/Library/Logs/GoProConnector.log
 enum AppLog {
     static let url: URL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
         .appendingPathComponent("Logs/GoProConnector.log")

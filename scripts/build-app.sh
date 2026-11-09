@@ -1,7 +1,7 @@
 #!/bin/zsh
-# Compila GoProConnector e crea il bundle "GoPro Connector.app" nella cartella build/.
-# Uso: scripts/build-app.sh [--install]
-#   --install  installa l'app in /Applications (compare nel Launchpad) e rimuove la copia in build/
+# Builds GoProConnector and creates the "GoPro Connector.app" bundle in the build/ folder.
+# Usage: scripts/build-app.sh [--install]
+#   --install  installs the app in /Applications (it shows up in Launchpad) and removes the copy in build/
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -21,19 +21,19 @@ cp Resources/Info.plist "$BUNDLE/Contents/Info.plist"
 cp Resources/AppIcon.icns "$BUNDLE/Contents/Resources/"
 cp -R Resources/*.lproj "$BUNDLE/Contents/Resources/"   # translations (English base + Italian)
 
-# Firma ad-hoc: necessaria per i permessi di rete locale su macOS 15
+# Ad-hoc signature: needed for the local network permission on macOS 15
 codesign --force --deep --sign - "$BUNDLE"
 
-echo "Creato: $BUNDLE"
+echo "Created: $BUNDLE"
 if [[ "${1:-}" == "--install" ]]; then
   DEST="/Applications/${APP_NAME}.app"
   pkill -x GoProConnector 2>/dev/null && sleep 1 || true
   rm -rf "$DEST"
   ditto "$BUNDLE" "$DEST"
-  # Una sola copia registrata, così Launchpad/Spotlight aprono sempre quella installata
+  # Keep a single registered copy, so Launchpad/Spotlight always open the installed one
   "$LSREGISTER" -u "$BUNDLE" 2>/dev/null || true
   rm -rf "$BUNDLE"
   "$LSREGISTER" -f "$DEST"
   touch "$DEST"
-  echo "Installato: $DEST (visibile nel Launchpad)"
+  echo "Installed: $DEST (visible in Launchpad)"
 fi

@@ -81,7 +81,7 @@ struct GoProConnectorApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Necessario quando l'app è avviata come eseguibile (swift run) e non come bundle .app
+        // Needed when the app runs as a plain executable (swift run) rather than as an .app bundle
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
     }

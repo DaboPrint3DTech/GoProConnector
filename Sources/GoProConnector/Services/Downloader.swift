@@ -1,6 +1,6 @@
 import Foundation
 
-/// Scarica file grandi su disco con notifiche di avanzamento.
+/// Downloads large files to disk with progress callbacks.
 final class Downloader: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
     typealias Progress = @Sendable (_ written: Int64, _ expected: Int64) -> Void
 
@@ -15,13 +15,13 @@ final class Downloader: NSObject, URLSessionDownloadDelegate, @unchecked Sendabl
     private var handlers: [Int: Handler] = [:]
     private lazy var session: URLSession = {
         let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 30      // inattività massima
+        config.timeoutIntervalForRequest = 30      // maximum idle time
         config.timeoutIntervalForResource = 60 * 60 * 6
         config.httpMaximumConnectionsPerHost = 1
         return URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }()
 
-    /// Scarica `url` in `destination` (sovrascrive se esiste).
+    /// Downloads `url` to `destination` (overwriting it if it exists).
     func download(_ url: URL, to destination: URL, progress: @escaping Progress) async throws {
         let box = TaskBox()
         try await withTaskCancellationHandler {

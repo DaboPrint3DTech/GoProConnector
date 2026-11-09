@@ -1,6 +1,6 @@
 import Foundation
 
-/// Tipo di media sulla GoPro.
+/// Kind of media on the GoPro.
 enum MediaKind: String, CaseIterable, Identifiable, Codable {
     case video
     case photo
@@ -38,12 +38,12 @@ enum MediaKind: String, CaseIterable, Identifiable, Codable {
     }
 }
 
-/// Un elemento della lista media della camera (un file singolo oppure un gruppo burst/timelapse).
+/// An item in the camera's media list (a single file or a burst/time-lapse group).
 struct MediaItem: Identifiable, Hashable, Sendable {
-    let directory: String          // es. "100GOPRO"
-    let fileName: String           // es. "GH010042.MP4"
-    let created: Date              // orario "da parete" della camera, da leggere in UTC
-    let size: Int64                // byte (per i gruppi: totale dichiarato dalla camera)
+    let directory: String          // e.g. "100GOPRO"
+    let fileName: String           // e.g. "GH010042.MP4"
+    let created: Date              // camera "wall clock" time, to be read as UTC
+    let size: Int64                // bytes (for groups: total reported by the camera)
     let groupType: String?         // "b" burst, "t" timelapse, "n" nightlapse, "c" continuous
     let groupID: Int?
     let groupFirst: Int?
@@ -69,13 +69,13 @@ struct MediaItem: Identifiable, Hashable, Sendable {
         }
     }
 
-    /// Numero di file effettivi (per i gruppi).
+    /// Actual number of files (for groups).
     var fileCount: Int {
         guard isGroup, let first = groupFirst, let last = groupLast else { return 1 }
         return max(0, last - first + 1 - groupMissing.count)
     }
 
-    /// Capitolo del video (GH01xxxx -> 1, GH02xxxx -> 2). nil se non applicabile.
+    /// Video chapter (GH01xxxx -> 1, GH02xxxx -> 2); nil when not applicable.
     var chapter: Int? {
         guard isVideo, fileName.count >= 8 else { return nil }
         let chars = Array(fileName)
@@ -83,7 +83,7 @@ struct MediaItem: Identifiable, Hashable, Sendable {
         return Int(String(chars[2...3]))
     }
 
-    /// Numero del video condiviso dai capitoli (GH01**0042** -> 42).
+    /// Video number shared by all chapters (GH01**0042** -> 42).
     var videoNumber: Int? {
         guard isVideo, fileName.count >= 8 else { return nil }
         let chars = Array(fileName)
@@ -91,7 +91,7 @@ struct MediaItem: Identifiable, Hashable, Sendable {
         return Int(String(chars[4...7]))
     }
 
-    /// Nome del file LRV (video a bassa risoluzione usato per l'anteprima).
+    /// Name of the LRV file (low-resolution video used for previews).
     var lrvFileName: String? {
         guard isVideo else { return nil }
         let base = (fileName as NSString).deletingPathExtension
@@ -101,7 +101,7 @@ struct MediaItem: Identifiable, Hashable, Sendable {
         return "GL" + base.dropFirst(2) + ".LRV"
     }
 
-    /// Tutti i nomi file reali che compongono l'elemento.
+    /// All the actual file names that make up the item.
     var allFileNames: [String] {
         guard isGroup, let gid = groupID, let first = groupFirst, let last = groupLast else {
             return [fileName]
@@ -113,12 +113,12 @@ struct MediaItem: Identifiable, Hashable, Sendable {
         }
     }
 
-    /// Chiave usata per ricordare i file già scaricati.
+    /// Key used to remember files that were already downloaded.
     var historyKey: String { "\(fileName)|\(size)|\(Int(created.timeIntervalSince1970))" }
 }
 
 extension MediaItem {
-    /// Crea un elemento a partire da un oggetto "fs" della risposta gpMediaList.
+    /// Creates an item from an "fs" object of the gpMediaList response.
     init?(directory: String, json: [String: Any]) {
         guard let name = json["n"] as? String else { return nil }
         self.directory = directory
@@ -139,7 +139,7 @@ extension MediaItem {
 }
 
 extension Dictionary where Key == String, Value == Any {
-    /// La camera restituisce numeri a volte come stringhe, a volte come interi.
+    /// The camera returns numbers sometimes as strings, sometimes as integers.
     func int(_ key: String) -> Int? {
         if let v = self[key] as? Int { return v }
         if let v = self[key] as? String { return Int(v) }
@@ -149,7 +149,7 @@ extension Dictionary where Key == String, Value == Any {
 }
 
 enum Formatters {
-    /// I timestamp GoPro rappresentano l'ora locale della camera codificata come se fosse UTC.
+    /// GoPro timestamps are the camera's local time encoded as if it were UTC.
     static let cameraDate: DateFormatter = {
         let f = DateFormatter()
         f.timeZone = TimeZone(identifier: "UTC")
@@ -194,7 +194,7 @@ enum Formatters {
         return f
     }()
 
-    /// Tempo rimanente leggibile, arrotondato per non "ballare" a ogni aggiornamento.
+    /// Readable time left, rounded so that it doesn't jump around on every update.
     static func eta(_ seconds: Double) -> String {
         guard seconds.isFinite else { return "—" }
         if seconds < 10 { return String(localized: "a few seconds") }

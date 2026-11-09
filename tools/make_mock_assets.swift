@@ -1,5 +1,5 @@
-// Genera immagini e un breve video di prova per il finto server GoPro.
-// Uso: swift tools/make_mock_assets.swift <cartella-output>
+// Generates test images and a short video for the mock GoPro server.
+// Usage: swift tools/make_mock_assets.swift <output-folder>
 import AppKit
 import AVFoundation
 
@@ -32,7 +32,7 @@ for (i, hue) in palette.enumerated() {
 }
 writeJPEG(makeImage(w: 2000, h: 1500, hue: 0.55, label: "FOTO"), "photo.jpg")
 
-// Video di 4 secondi
+// 4-second video
 let videoURL = out.appendingPathComponent("video.mp4")
 try? FileManager.default.removeItem(at: videoURL)
 let writer = try AVAssetWriter(outputURL: videoURL, fileType: .mp4)
@@ -63,4 +63,4 @@ input.markAsFinished()
 let sem = DispatchSemaphore(value: 0)
 writer.finishWriting { sem.signal() }
 sem.wait()
-print("Asset creati in \(out.path)")
+print("Assets created in \(out.path)")

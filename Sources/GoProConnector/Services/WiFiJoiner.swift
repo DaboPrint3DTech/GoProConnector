@@ -1,8 +1,8 @@
 import Foundation
 import Security
 
-/// Collega il Mac alla rete WiFi della GoPro usando `networksetup`
-/// (non richiede i permessi di localizzazione richiesti da CoreWLAN).
+/// Joins the Mac to the GoPro's WiFi network using `networksetup`
+/// (it doesn't need the location permission that CoreWLAN requires).
 enum WiFiJoiner {
     static func wifiInterface() -> String? {
         guard let out = try? run("/usr/sbin/networksetup", ["-listallhardwareports"]) else { return nil }
@@ -20,7 +20,7 @@ enum WiFiJoiner {
             guard let iface = wifiInterface() else { throw message(String(localized: "WiFi interface not found.")) }
             let out = try run("/usr/sbin/networksetup", ["-setairportnetwork", iface, ssid, password])
             let trimmed = out.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty {   // networksetup stampa qualcosa solo in caso di errore
+            if !trimmed.isEmpty {   // networksetup prints something only when it fails
                 throw message(trimmed)
             }
         }.value
@@ -45,7 +45,7 @@ enum WiFiJoiner {
     }
 }
 
-/// Salvataggio della password WiFi della camera nel Portachiavi.
+/// Stores the camera's WiFi password in the Keychain.
 enum Keychain {
     private static let service = "GoProConnector.wifi"
 

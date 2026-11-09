@@ -1,9 +1,9 @@
 import AppKit
 import CryptoKit
 
-/// Carica le miniature dalla camera con un limite di richieste parallele
-/// (il server HTTP della GoPro si blocca facilmente se sovraccaricato),
-/// cache in memoria e cache su disco.
+/// Loads thumbnails from the camera with a limit on parallel requests
+/// (the GoPro's HTTP server easily hangs when overloaded),
+/// plus an in-memory and an on-disk cache.
 @MainActor
 final class ThumbnailLoader {
     static let shared = ThumbnailLoader()
@@ -69,7 +69,7 @@ final class ThumbnailLoader {
 
     private func release() {
         if !waiters.isEmpty {
-            waiters.removeFirst().resume()   // il permesso passa direttamente al prossimo
+            waiters.removeFirst().resume()   // the slot goes straight to the next waiter
         } else {
             running -= 1
         }
